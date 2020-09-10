@@ -150,8 +150,10 @@ DataManR <- proto::proto(Tables = list(),
                                      RightKey = character()),
                   name = NA_character_,
                   path = NA_character_,
+                  message = NA_character_,
                   setManName = function(., name = .$name){ .$name <- name},
                   setManPath = function(., path = .$path) { .$path <- path %na% full_path(path)},
+                  setManMess = function(., message = .$message) { .$message <- message},
                   validManName = function(.) !is.na(.$name)&&str_length(.$name)>0,
                   validManPath = function(.) !is.na(.$path)&&dir.exists(.$path),
                   setTableLink = function(., LeftTable, LeftKey, RightTable, RightKey) {
@@ -203,11 +205,16 @@ DataManR <- proto::proto(Tables = list(),
                     }
                     if(is.na(.$path)){
                       errors <- c(errors, glue("Data Manager path is not defined."))
-                    } else if(dir.exists(.$path)) {
+                    } else if(!dir.exists(.$path)) {
                       rlang::warn(glue("{.$path} does not exist yet."))
                     }
                     if(length(errors)>0) {
-                      rlang::abort(glue_collapse(errors, sep = "\n"))
+                      rlang::warn(glue_collapse(errors, sep = "\n"))
+                      .$setManMess(errors)
+                      return(FALSE)
+                    } else {
+                      .$setManMess(NULL)
+                      return(TRUE)
                     }
 
                   },
