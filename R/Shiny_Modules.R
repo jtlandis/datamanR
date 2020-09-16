@@ -35,8 +35,7 @@ createDataManRServer <- function(id, roots = c(home = getwd()), filetypes =  c('
       })
 
       path <- reactive({
-        home <- normalizePath("~")
-        file.path(home, paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
+        parseDirPath(roots = roots, selection = dir())
       })
 
       dataManR <- reactive({
