@@ -151,9 +151,24 @@ DataManR <- proto::proto(Tables = list(),
                   name = NA_character_,
                   path = NA_character_,
                   message = NA_character_,
+                  permission = "public",
+                  owner = NA_character_,
+                  group = NA_character_,
+                  access = "774", #a convience value
                   setManName = function(., name = .$name){ .$name <- name},
                   setManPath = function(., path = .$path) { .$path <- path %na% full_path(path)},
                   setManMess = function(., message = .$message) { .$message <- message},
+                  setGroup = function(., group = .$group) { .$group <- group},
+                  setPermission = function(., permission = .$permission) {
+                    if(!is.element(permission, c("public","private"))){
+                      abort("{permission} is not a valid permission")
+                    }
+                    .$access <- switch (permission,
+                      public = "774", #Anyone in group can modify
+                      private = "744" #Only user can modify
+                    )
+                    .$permission <- permission
+                  },
                   validManName = function(.) !is.na(.$name)&&str_length(.$name)>0,
                   validManPath = function(.) !is.na(.$path)&&dir.exists(.$path),
                   setTableLink = function(., LeftTable, LeftKey, RightTable, RightKey) {
@@ -193,7 +208,10 @@ DataManR <- proto::proto(Tables = list(),
                         return(x)
                       })
                     }
-                    saveRDS(., file = paste0(location,"/",.$name,"_DataManR.rds"))
+                    path <- paste0(location,"/",.$name,"_DataManR.rds")
+                    saveRDS(., file = path)
+                    fs::file_chown(path = path, user_id = .$owner, group_id = .$group)
+                    fs::file_chmod(path = path, mode = .$access)
                   },
                   updateClass = function(.) {
                     .$setManPath(.$path)
@@ -223,7 +241,7 @@ DataManR <- proto::proto(Tables = list(),
                                  name = .$name,
                                  links = .$links,
                                  path = .$path) {
-                    tmp <- .$proto(Tables = Tables, name = name, links = links, path = path)
+                    tmp <- .$proto(Tables = Tables, name = name, links = links, path = path, owner = Sys.info()[["user"]], owner = Sys.info()[["user"]])
                     tmp$isValid()
                     class(tmp) <- c("DataManR",class(tmp))
                     return(tmp)
