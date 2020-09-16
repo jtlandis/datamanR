@@ -2,24 +2,26 @@
 #' @import shinyFiles
 
 
-createDataManRUI <- function(id, label = "Make Data Manager"){
+#' @export
+createDataManRUI <- function(id){
   ns <- NS(id)
 
   tagList(
     textInput(ns("name"), "Data Manager Name:"),
     shinyDirButton(ns("directory"), "Choose Save Directory", title = "choose something"),
     actionButton(ns("createDataMan"), "Create!"),
-    textOutput(ns("dir"))
+    textOutput(ns("dir")),
+    verbatimTextOutput(ns("info"))
   )
 }
 
-createDataManRServer <- function(id) {
+#' @export
+createDataManRServer <- function(id, roots, filetypes = c('', 'txt', 'bigWig', "tsv", "csv", "bw","R")) {
   moduleServer(
     id,
     function(input, output, session){
 
-      shinyDirChoose(input, "directory", roots = c("root"="~"), filetypes = c('', 'txt', 'bigWig', "tsv", "csv", "bw","R"))
-
+      shinyDirChoose(input, "directory", roots = roots, filetypes = filetypes)
       path <- reactive({
         if(!"path"%in%names(input$directory)){
           return()
@@ -42,6 +44,9 @@ createDataManRServer <- function(id) {
         path()
       })
 
+      output$info <- renderPrint({
+        Sys.info()
+      })
 
       return(dataMan)
 
@@ -51,7 +56,11 @@ createDataManRServer <- function(id) {
 
 
 server <- function(input, output, session){
-  dataMan <- createDataManRServer("datMan")
+  dataMan <- createDataManRServer("datMan", roots = c("Data Managers" = "/home/datamanr"))
 }
+
+ui <- fluidPage(
+  createDataManRUI("datMan")
+)
 
 shinyApp(ui,server)

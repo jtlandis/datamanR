@@ -222,6 +222,14 @@ DataManR <- proto::proto(Tables = list(),
                     return(tmp)
                   })
 
+#' @title load_DataManR
+#' @rdname load_DataManR
+#' @description Main function to read the specified rds file.
+#' @param file rds file to read in
+#' @param force_load_data logical defaults to F. Indicates
+#' if each table managed by DataManR should be read into
+#' memory.
+#' @export
 load_DataManR <- function(file, force_load_data = F){
   DataMan <- readRDS(file = file)
   if(force_load_data){
