@@ -17,6 +17,10 @@ column_classes <- function(data){
   return(data)
 }
 
+"%||%" <- function(a,b){
+  if(is.null(a)) b else a
+}
+
 #' @name full_path
 #' @description create the full path for a hypothetical directory/file
 full_path <- function(path) {

@@ -2,65 +2,118 @@
 #' @import shinyFiles
 
 
+#' @description not working
 #' @export
 createDataManRUI <- function(id){
   ns <- NS(id)
 
   tagList(
     textInput(ns("name"), "Data Manager Name:"),
-    shinyDirButton(ns("directory"), "Choose Save Directory", title = "choose something"),
+    shinyDirButton(ns("directory"), "Choose Save Directory", "Select/Make a Directory for the Data Manager"),
     actionButton(ns("createDataMan"), "Create!"),
-    textOutput(ns("dir")),
-    verbatimTextOutput(ns("info"))
+    actionButton(ns("set"), "Set Data Manager", style = "background-color: #3BBFDA;"),
+    div(style="min-height:10vh;max-height:25vh;overflow-y:scroll;padding:15px;", verbatimTextOutput(ns("display")))
   )
 }
 
 #' @export
-createDataManRServer <- function(id, roots, filetypes = c('', 'txt', 'bigWig', "tsv", "csv", "bw","R")) {
+createDataManRServer <- function(id, roots = c(home = getwd()), filetypes =  c('', 'txt', 'tsv', 'csv', 'rds', 'R', 'Rmd')) {
   moduleServer(
     id,
     function(input, output, session){
 
+
       shinyDirChoose(input, "directory", roots = roots, filetypes = filetypes)
-      path <- reactive({
-        if(!"path"%in%names(input$directory)){
-          return()
-        } else {
-          home <- normalizePath("~")
-          text <- file.path(home, paste(unlist(input$directory$path[-1]), collapse = .Platform$file.sep))
-        }
-        text
-      })
-      dataMan <- reactive({
-        isolate({
-          name <- input$name
-          direct <- path()
+
+      dir <- reactive({
+        validate(need(!is.null(input$directory), "Please select a Directory"))
+        input$directory
         })
-        input$createDataMan
-        datamanR::DataManR$new(name = name, path = direct)
+      nam <- reactive({
+        validate(need(input$name != "", "Please give the Data Manager a Name"))
+        input$name
       })
 
-      output$dir <- renderText({
-        path()
+      path <- reactive({
+        home <- normalizePath("~")
+        file.path(home, paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
+      })
+
+      dataManR <- reactive({
+       req(input$createDataMan)
+       isolate({
+          name <- nam()
+          direct <- path()
+        })
+        datamanR::DataManR$new(name = name, path = direct)
+        })
+
+      set <- reactive({
+        input$set
+      })
+
+      output$display <- renderPrint({
+        req(input$createDataMan)
+        dataManR()
       })
 
       output$info <- renderPrint({
         Sys.info()
       })
 
-      return(dataMan)
+      return(list(data = dataManR, set = set))
 
     }
   )
 }
 
+#' @export
+loadDataManRUI <- function(id){
+  ns <- NS(id)
 
-server <- function(input, output, session){
-  dataMan <- createDataManRServer("datMan", roots = c("Data Managers" = "/home/datamanr"))
+  tagList(
+    shinyFilesButton(ns("file"), "Load", "Select a .rds File!", multiple = F),
+    actionButton(ns("set"), "Set Data Manager", style = "background-color: #3BBFDA;"),
+    br(),
+    br(),
+    div(style="min-height:10vh;max-height:25vh;overflow-y:scroll;padding:15px;", fluidRow(verbatimTextOutput(ns("display"))))
+  )
 }
 
-ui <- fluidPage(
-  createDataManRUI("datMan")
-)
+#' @export
+loadDataManRServer <- function(id, roots = c(home = getwd())) {
+  moduleServer(
+    id,
+    function(input, output, session){
 
-shinyApp(ui,server)
+      shinyFileChoose(input, "file", roots = roots, filetypes = c('', 'rds'))
+
+      dir <- reactive({
+        validate(need(input$file, "Please select a File"),
+                 need(!is.null(input$file), "Please select a File"))
+        input$file
+      })
+
+      path <- reactive({
+        parseFilePaths(roots = roots, selection = dir())
+      })
+
+      dataManR <- reactive({
+        validate(need("datapath"%in%names(path()), "Select a valid File"),
+                 need(nrow(path())==1, "Select a valid File"))
+        readRDS(path()$datapath)
+      })
+
+      set <- reactive({
+        input$set
+        })
+
+      output$display <- renderPrint({
+        dataManR()
+      })
+
+      return(list(data = dataManR,set = set))
+
+    }
+  )
+}
