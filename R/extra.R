@@ -67,3 +67,67 @@ print.DataManR <- function(x){
       "\npath: ", x$path,"\n")
   x$Tables
 }
+
+
+validate_error <- function (..., errorClass = character(0)) {
+  results <- sapply(list(...), function(x) {
+    if (is.null(x))
+      return(NA_character_)
+    else if (identical(x, FALSE))
+      return("")
+    else if (is.character(x))
+      return(paste(as.character(x), collapse = "\n"))
+    else stop("Unexpected validation result: ", as.character(x))
+  })
+  results <- stats::na.omit(results)
+  if (length(results) == 0)
+    return(invisible())
+  results <- results[nzchar(results)]
+  stop(paste(results, collapse = "\n"), call. = F)
+}
+
+validate_warn <- function (..., errorClass = character(0)) {
+  results <- sapply(list(...), function(x) {
+    if (is.null(x))
+      return(NA_character_)
+    else if (identical(x, FALSE))
+      return("")
+    else if (is.character(x))
+      return(paste(as.character(x), collapse = "\n"))
+    else stop("Unexpected validation result: ", as.character(x))
+  })
+  results <- stats::na.omit(results)
+  if (length(results) == 0)
+    return(invisible())
+  results <- results[nzchar(results)]
+  warning(paste(results, collapse = "\n"), call. = F)
+}
+
+validate_message <- function (..., errorClass = character(0)) {
+  results <- sapply(list(...), function(x) {
+    if (is.null(x))
+      return(NA_character_)
+    else if (identical(x, FALSE))
+      return("")
+    else if (is.character(x))
+      return(paste(as.character(x), collapse = "\n"))
+    else stop("Unexpected validation result: ", as.character(x))
+  })
+  results <- stats::na.omit(results)
+  if (length(results) == 0)
+    return(invisible())
+  results <- results[nzchar(results)]
+  warning(paste(results, collapse = "\n"), call. = F)
+}
+
+need2 <- function (expr, message) {
+  force(message)
+  if (!check_expr(expr))
+    return(message)
+  else return(invisible(NULL))
+}
+
+check_expr <- function(expr){
+  if(length(expr)==0) return(FALSE)
+  return(expr)
+}

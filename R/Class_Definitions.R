@@ -70,15 +70,14 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                                 self$path <- path
                               },
                               validate = function(){
-                                if(!dir.exists(dirname(self$path))){
-                                  abort(glue("path: {dirname(self$path)} does not exits!\n"))
-                                }
-                                if(!file.exists(self$path)){
-                                  warn(glue("file: {basename(self$path)} does not exist yet!\n"))
-                                }
-                                if(is.na(self$name)){
-                                  warn(glue("name is NA!"))
-                                }
+                                validate_warn(
+                                  need2(file.exists(self$path), glue("file: {self$path} does not exist yet!"))
+                                )
+                                validate_error(
+                                  need2(!is.na(self$name), glue("`$name` is not defined: {self$name}")),
+                                  need2(!is.na(self$path), glue("`$path` is not defined: {self$path}")),
+                                  need2(dir.exists(dirname(self$path)), glue("directory: {dirname(self$path)} does not exist yet!"))
+                                )
                                 TRUE
                               },
                               isValid = function(){
@@ -162,24 +161,27 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    cat("DataTableDefinitions:\n",
                                        "  Name  : ", self$name,"\n",
                                        "  Path  : ", self$path,"\n",
-                                       "  md5sum: ", self$path,"\n",
-                                       "  keys  : ", self$keys,"\n", sep = "")
+                                       "  md5sum: ", self$md5sum,"\n",
+                                       "  keys  : ", paste(self$keys,collapse =", "),"\n", sep = "")
                                   if(!is.null(self$data)){
                                     cat("  Data  : \n")
                                     print(head(self$data))
                                   }
                                  },
                                  validate = function(){
-                                   super$validate()
-                                   if(is.null(self$data)){
-                                     abort("No data loaded")
-                                   }
-                                   shiny::validate(
-                                     need(self$col_names == colnames(self$data), "`$col_names` do not match data Column names."),
-                                     need(self$col_types == colclasses(self$data), "`$col_types` do not match classes of data."),
-                                     need(all(self$keys %in% self$col_names),
-                                          glue("The following `$keys` are not a subset of `$col_names`:\n
-                                               {paste(self$keys[!self$keys%in%self$col_names], sep = \",\")}"))
+                                   validate_warn(
+                                     need2(file.exists(self$path), glue("file: {self$path} does not exist yet!"))
+                                   )
+                                   validate_error(
+                                     need2(!is.na(self$name), glue("`$name` is not defined: {self$name}")),
+                                     need2(!is.na(self$path), glue("`$path` is not defined: {self$path}")),
+                                     need2(dir.exists(dirname(self$path)), glue("directory: {dirname(self$path)} does not exist yet!")),
+                                     need2(!is.null(self$data), "No data is loaded"),
+                                     need2(all(self$col_names == colnames(self$data)), "`$col_names` do not match data Column names."),
+                                     need2(all(self$col_types == colclasses(self$data)), "`$col_types` do not match classes of data."),
+                                     need2(all(self$keys %in% self$col_names),
+                                          glue("The following `$keys` are not a subset of `$col_names`:\n",
+                                               "  {paste(self$keys[!self$keys%in%self$col_names], collapse = \", \")}"))
                                    )
                                    TRUE
                                  }
