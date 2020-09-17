@@ -12,13 +12,29 @@
 "%na%" <- function(a,b){
   if(is.null(a)) a else b
 }
-column_classes <- function(data){
+colclasses <- function(data){
   data <- data %null% unlist(lapply(data, class))
   return(data)
 }
 
 "%||%" <- function(a,b){
   if(is.null(a)) b else a
+}
+
+# "%miss%" <- function(a,b) if(missing(a)) b else a
+# "%!miss%" <- function(a,b) if(!missing(a)) a else b
+
+require_scalar_char <- function(value, object){
+  validate(
+    need(is.character(value), glue("{object} must be a character string.")),
+    need(length(value)==1, glue("{object} must be length 1."))
+  )
+}
+
+require_char <- function(value, object){
+  validate(
+    need(is.character(value), glue("{object} must be a character string."))
+  )
 }
 
 #' @name full_path
