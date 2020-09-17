@@ -116,3 +116,66 @@ loadDataManRServer <- function(id, roots = c(home = getwd())) {
     }
   )
 }
+
+
+#' @export
+modDataManRUI <- function(id){
+  ns <- NS(id)
+
+  tagList(
+    uiOutput(ns("ui")),
+    hr(),
+    h3("Preview"),
+    verbatimTextOutput(ns("preview")),
+    actionButton(ns("save"), "Save")
+
+  )
+}
+
+#' @export
+modDataManServer <- function(id, roots = c(home = getwd()), datamanR) {
+  moduleServer(
+    id,
+    function(input, output, session){
+
+      #dm <- reactiveVal(datamanR)
+      shinyDirChoose(input, "directory", roots = roots, filetypes = c('', 'rds'))
+
+      dir <- reactive({
+        input$directory
+        ifelse(!isTruthy(input$directory),
+               datamanR()$path,
+               parseDirPath(roots = roots, selection = input$directory))
+      })
+
+
+      output$ui<- renderUI({
+        ns <- session$ns
+        fluidRow(
+          column(width = 6,
+                 textInput(ns("name"), label = "Name", value = datamanR()$name),
+                 selectInput(ns("perm"), "Permission Level", choices = c("public","private"), selected = datamanR()$access)),
+          column(width = 6,
+                 shinyDirButton(ns("directory"), "New Directory", "Select New Directory"),
+                 textOutput(ns("dirout")))
+        )
+
+      })
+
+
+      output$dirout <- renderText(dir())
+
+      previewDM <- reactive({
+        browser()
+        dm <- datamanR()
+        dm <- dm$setManName(input$name)
+        dm <- dm$setManPath(dir())
+        dm <- dm$setPermission(input$perm)
+        dm
+      })
+
+
+      output$preview <- renderPrint(previewDM())
+    }
+  )
+}

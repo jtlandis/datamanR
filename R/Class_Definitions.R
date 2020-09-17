@@ -155,7 +155,7 @@ DataManR <- proto::proto(Tables = list(),
                   owner = NA_character_,
                   group = NA_character_,
                   access = "774", #a convience value
-                  setManName = function(., name = .$name){ .$name <- name},
+                  setManName = function(., name = .$name){ .$name <- name; .},
                   setManPath = function(., path = .$path) { .$path <- path %na% full_path(path)},
                   setManMess = function(., message = .$message) { .$message <- message},
                   setGroup = function(., group = .$group) { .$group <- group},

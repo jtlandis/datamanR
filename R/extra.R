@@ -24,9 +24,10 @@ column_classes <- function(data){
 #' @name full_path
 #' @description create the full path for a hypothetical directory/file
 full_path <- function(path) {
-  dir_ <- dirname(path)
-  bas_ <- basename(path)
-  return(paste(normalizePath(dir_),bas_, sep = "/"))
+  dotdot <- stringr::str_detect(path, "\\.\\.\\/?$")
+  dir_ <- ifelse(dotdot, path, dirname(path))
+  bas_ <- ifelse(dotdot, "", basename(path))
+  return(paste(normalizePath(dir_),bas_, sep = ifelse(dotdot,"","/")))
 }
 
 #' @export
