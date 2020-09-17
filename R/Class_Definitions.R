@@ -38,7 +38,154 @@
 #'
 #' Methods to set each field
 #' @export
-TableDef <- proto::proto(data = NULL,
+BaseDMR <- R6::R6Class(classname = "BaseDMR",
+                            active = list(
+                              name = function(value) {
+                                if(missing(value)){
+                                  private$.name
+                                } else{
+                                  require_scalar_char(value, "`$name`")
+                                  private$.name <- value
+                                  self
+                                }
+                              },
+                              path = function(value) {
+                                if(missing(value)){
+                                  private$.path
+                                } else {
+                                  require_scalar_char(value, "`$path`")
+                                  value <- value %na% full_path(value)
+                                  private$.path <- value
+                                  self
+                                }
+                              }
+                              ),
+                            private = list(
+                              .name = NA_character_,
+                              .path = NA_character_
+                            ),
+                            public = list(
+                              initialize = function(name = NA_character_, path = NA_character_){
+                                self$name <- name
+                                self$path <- path
+                              },
+                              validate = function(){
+                                if(!dir.exists(dirname(self$path))){
+                                  abort(glue("path: {dirname(self$path)} does not exits!\n"))
+                                }
+                                if(!file.exists(self$path)){
+                                  warn(glue("file: {basename(self$path)} does not exist yet!\n"))
+                                }
+                                if(is.na(self$name)){
+                                  warn(glue("name is NA!"))
+                                }
+                                TRUE
+                              },
+                              isValid = function(){
+                                tryCatch( expr = self$validate(),
+                                          error = function(err) {
+                                            message(glue("{err$message}\n")) ; F }
+                                )
+                              },
+                              print = function(){
+                                cat("DMRStructure:\n",
+                                    "    Name: ", self$name,"\n",
+                                    "    Path: ", self$path,"\n", sep = "")
+                              }
+                            )
+                       )
+
+TableDefinition <- R6::R6Class(classname = "TableDefinition",
+                               inherit = BaseDMR,
+                               private = list(
+                                 .col_names = NA_character_,
+                                 .col_types = NA_character_,
+                                 .keys = NA_character_,
+                                 .md5sum = NA_character_
+                               ),
+                               active = list(
+                                 col_names = function(value){
+                                   if(missing(value)){
+                                     private$.col_names
+                                   } else {
+                                     require_char(value, "`$col_names`")
+                                     private$.col_names <- value
+                                     self
+                                   }
+                                 },
+                                 col_types = function(value){
+                                   if(missing(value)){
+                                     private$.col_types
+                                   } else {
+                                     require_char(value, "`$col_types`")
+                                     private$.col_types <- value
+                                     self
+                                   }
+                                 },
+                                 keys = function(value){
+                                   if(missing(value)){
+                                     private$.keys
+                                   } else {
+                                     require_char(value, "`$keys`")
+                                     private$.keys <- value
+                                     self
+                                   }
+                                 },
+                                 md5sum = function(value){
+                                   if(missing(value)){
+                                     private$.md5sum
+                                   } else {
+                                     require_scalar_char(value, "`$md5sum`")
+                                     private$.md5sum <- value
+                                     self
+                                   }
+                                 }
+                                 ),
+                               public = list(
+                                 data = NULL,
+                                 initialize = function(data = NULL,
+                                                       name = NA_character_,
+                                                       path = NA_character_,
+                                                       col_names = colnames(data),
+                                                       col_types = colclasses(data),
+                                                       keys = NA_character_,
+                                                       md5sum = NA_character_) {
+                                   self$data <- data
+                                   self$name <- name
+                                   self$path <- path
+                                   self$col_names <- col_names %||% NA_character_
+                                   self$col_types <- col_types %||% NA_character_
+                                   self$keys <- keys
+                                   self$md5sum <- md5sum
+                                 },
+                                 print = function(){
+                                   cat("DataTableDefinitions:\n",
+                                       "  Name  : ", self$name,"\n",
+                                       "  Path  : ", self$path,"\n",
+                                       "  md5sum: ", self$path,"\n",
+                                       "  keys  : ", self$keys,"\n", sep = "")
+                                  if(!is.null(self$data)){
+                                    cat("  Data  : \n")
+                                    print(head(self$data))
+                                  }
+                                 },
+                                 validate = function(){
+                                   super$validate()
+                                   if(is.null(self$data)){
+                                     abort("No data loaded")
+                                   }
+                                   shiny::validate(
+                                     need(self$col_names == colnames(self$data), "`$col_names` do not match data Column names."),
+                                     need(self$col_types == colclasses(self$data), "`$col_types` do not match classes of data."),
+                                     need(all(self$keys %in% self$col_names),
+                                          glue("The following `$keys` are not a subset of `$col_names`:\n
+                                               {paste(self$keys[!self$keys%in%self$col_names], sep = \",\")}"))
+                                   )
+                                   TRUE
+                                 }
+                               ))
+
+  data = NULL,
                   name = NA_character_,
                   file = NA_character_,
                   col_names = NA_character_,
