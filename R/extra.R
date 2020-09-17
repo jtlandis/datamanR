@@ -10,7 +10,7 @@
 }
 
 "%na%" <- function(a,b){
-  if(is.null(a)) a else b
+  if(is.na(a)) a else b
 }
 colclasses <- function(data){
   data <- data %null% unlist(lapply(data, class))
