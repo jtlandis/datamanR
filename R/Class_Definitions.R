@@ -195,7 +195,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    if(is.null(self$data)){
                                      warn("`$data` is NULL. Please provide data before updating")
                                    } else {
-                                     self$data <- as.data.table(self$data)
+                                     if(!inherits(self$data, "data.table")) self$data <- as.data.table(self$data)
                                      self$col_names <- colnames(self$data)
                                      self$col_types <- colclasses(self$data)
                                    }
@@ -231,28 +231,58 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  save = function(location = dirname(self$path), name = paste0(self$name, "_tableDef.rds")){
                                    saveRDS(object = self, file = paste0(location,"/", name))
                                  },
-                                 trans = function(i = NULL, j = NULL, by = NULL, deparse = T){
+                                 trans = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
+                                   #browser()
                                    if(deparse){
                                      i <- deparse(substitute(i))
                                      j <- deparse(substitute(j)) %>% str_remove(pattern = "^list")
                                    }
-                                   signature <- !unlist(lapply(list(i = i, j = j, by = by), function(x) {x=="NULL"}))
+                                   signature <- !unlist(lapply(list(i = i, j = j, by = by), function(x) {x=="NULL"||is.null(x)}))
                                    fncID <- paste(names(signature)[signature], collapse = ".")
                                    text <- switch(fncID,
                                                j = str_c("`:=` ", j),
+                                               j.by = str_c("`:=` ", j),
                                                i.j = c("i" = i, "j" = str_c("`:=` ", j)),
                                                i.j.by = c("i" = i, "j" = str_c("`:=` ", j)))
 
                                    switch(fncID,
                                           j = self$data[, eval(parse(text=text))],
-                                          i.j = self$data[eval(parse(text=text[1])), eval(parse(text = text[2]))],
-                                          i.j.by = self$data[eval(parse(text=text[1])), eval(parse(text = text[2])), by = by],
+                                          j.by = self$data[, eval(parse(text=text)), by = by],
+                                          i.j = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2]))],
+                                          i.j.by = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2])), by = by],
                                           self$data)
+                                   self
+                                 },
+                                 filter = function(i = NULL, deparse = TRUE){
+                                   if(deparse){
+                                     i <- deparse(substitute(i))
+                                   }
+                                   if(i=="NULL"||is.null(i)){
+                                     return(self)
+                                   }
+                                   self$data <- self$data[ eval(parse(text = i)),]
+                                   self
+                                 },
+                                 summarise = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
+                                  # browser()
+                                   if(deparse){
+                                     i <- deparse(substitute(i))
+                                     j <- deparse(substitute(j))
+                                   }
+                                   signature <- !unlist(lapply(list(i = i, j = j, by = by), function(x) {x=="NULL"||is.null(x)}))
+                                   fncID <- paste(names(signature)[signature], collapse = ".")
+                                   self$data <- switch(fncID,
+                                                       j = self$data[, eval(parse(text = j))],
+                                                       j.by = self$data[, eval(parse(text = j)), by = by],
+                                                       i.j = self$data[eval(parse(text = i)), eval(parse(text = j))],
+                                                       i.j.by = self$data[eval(parse(text = i)), eval(parse(text = j)), by = by])
                                    self
                                  }
                                ))
 
 t <- TableDefinition$new(iris)
+t$trans(by = "Species", j = list(grp = .GRP, n = .N))
+t$summarise(j = list(test = Sepal.Length+5))
 t$trans(j = list(Sepal.Length = Sepal.Length^2), i = Species %in% "setosa")
 #' @title TableDef Methods
 #' @name TableDef_methods
