@@ -155,6 +155,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    self$col_names <- col_names %||% NA_character_
                                    self$col_types <- col_types %||% NA_character_
                                    self$keys <- keys
+                                   self$update()
                                  },
                                  print = function(){
                                    cat("DataTableDefinitions:\n",
@@ -194,6 +195,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    if(is.null(self$data)){
                                      warn("`$data` is NULL. Please provide data before updating")
                                    } else {
+                                     self$data <- as.data.table(self$data)
                                      self$col_names <- colnames(self$data)
                                      self$col_types <- colclasses(self$data)
                                    }
@@ -203,7 +205,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      warn("`$path` is not exist. Please write table to update md5sum.")
                                    }
                                    self
-                                 }
+                                 },
                                  write = function(data = self$data,
                                                   file = self$path,
                                                   sep = ",",
@@ -228,10 +230,30 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  },
                                  save = function(location = dirname(self$path), name = paste0(self$name, "_tableDef.rds")){
                                    saveRDS(object = self, file = paste0(location,"/", name))
+                                 },
+                                 trans = function(i = NULL, j = NULL, by = NULL, deparse = T){
+                                   if(deparse){
+                                     i <- deparse(substitute(i))
+                                     j <- deparse(substitute(j)) %>% str_remove(pattern = "^list")
+                                   }
+                                   signature <- !unlist(lapply(list(i = i, j = j, by = by), function(x) {x=="NULL"}))
+                                   fncID <- paste(names(signature)[signature], collapse = ".")
+                                   text <- switch(fncID,
+                                               j = str_c("`:=` ", j),
+                                               i.j = c("i" = i, "j" = str_c("`:=` ", j)),
+                                               i.j.by = c("i" = i, "j" = str_c("`:=` ", j)))
+
+                                   switch(fncID,
+                                          j = self$data[, eval(parse(text=text))],
+                                          i.j = self$data[eval(parse(text=text[1])), eval(parse(text = text[2]))],
+                                          i.j.by = self$data[eval(parse(text=text[1])), eval(parse(text = text[2])), by = by],
+                                          self$data)
+                                   self
                                  }
                                ))
 
-
+t <- TableDefinition$new(iris)
+t$trans(j = list(Sepal.Length = Sepal.Length^2), i = Species %in% "setosa")
 #' @title TableDef Methods
 #' @name TableDef_methods
 #' @description Methods of TableDef
