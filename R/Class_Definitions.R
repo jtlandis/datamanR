@@ -277,13 +277,18 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                        i.j = self$data[eval(parse(text = i)), eval(parse(text = j))],
                                                        i.j.by = self$data[eval(parse(text = i)), eval(parse(text = j)), by = by])
                                    self
+                                 },
+                                 copy = function(deep = FALSE){
+                                   clone_ <- self$clone(deep = deep)
+                                   clone_$data <- copy(self$data)
+                                   clone_
                                  }
                                ))
 
 t <- TableDefinition$new(iris)
-t$trans(by = "Species", j = list(grp = .GRP, n = .N))
-t$summarise(j = list(test = Sepal.Length+5))
-t$trans(j = list(Sepal.Length = Sepal.Length^2), i = Species %in% "setosa")
+t2 <-t$copy()
+t$copy()$summarise(j = list(test = Sepal.Length+5))
+t$copy(deep = T)$trans(j = list(Sepal.Length = Sepal.Length^2), i = Species %in% "setosa")
 #' @title TableDef Methods
 #' @name TableDef_methods
 #' @description Methods of TableDef
