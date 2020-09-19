@@ -25,15 +25,15 @@ colclasses <- function(data){
 # "%!miss%" <- function(a,b) if(!missing(a)) a else b
 
 require_scalar_char <- function(value, object){
-  validate(
-    need(is.character(value), glue("{object} must be a character string.")),
-    need(length(value)==1, glue("{object} must be length 1."))
+  validate_error(
+    need2(is.character(value), glue("{object} must be a character string.")),
+    need2(length(value)==1, glue("{object} must be length 1."))
   )
 }
 
 require_char <- function(value, object){
-  validate(
-    need(is.character(value), glue("{object} must be a character string."))
+  validate_error(
+    need2(is.character(value), glue("{object} must be a character string."))
   )
 }
 
