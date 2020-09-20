@@ -1,4 +1,4 @@
-#' @import proto
+#' @import R6
 #' @import glue
 #' @import data.table
 #' @importFrom rlang abort warn
@@ -143,4 +143,31 @@ wrap_str <- function(str){
                 str_c("`",str,"`"),
                 str)
   return(str2)
+}
+
+
+parse_fun_list <- function(list) {
+  if(is.null(list)) return("NULL")
+  text <- lapply(list, function(x){
+    val <- str_extract(deparse(x), "(?<=(Primitive|UseMethod)\\(\")[:alnum:]+(?=\")")
+    val <- val[!is.na(val)]
+    return(val)
+  })
+  str_c("list(",str_c(names(text), "=",text, collapse = ", "),")", collapse = "")
+}
+
+melt_meta <- function(measure.vars, variable.name, value.name){
+
+  names(measure.vars) <- value.name
+  data <- unlist(measure.vars)
+  data <- data.frame(measure = data,
+                     value = str_extract(names(data), pattern = str_group(value.name)),
+                     variable = str_remove(names(data), pattern = str_group(value.name))) %>%
+    spread(key = value, value = measure)
+  colnames(data)[colnames(data)%in%"variable"] <- variable.name
+  return(as.data.table(data))
+}
+
+str_group <- function(str){
+  str_c("(", str_c(str, collapse = "|"),")")
 }

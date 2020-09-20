@@ -102,7 +102,17 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  .col_names = NA_character_,
                                  .col_types = NA_character_,
                                  .keys = NA_character_,
-                                 .md5sum = NA_character_
+                                 .md5sum = NA_character_,
+                                 .history = NULL,
+                                 push_history = function(value = "", field = "", verb = "changed", collapse = ", ", custom = NULL){
+                                   entry <- custom %||% str_c(field, verb, "to:", str_c(value, collapse = collapse), sep = " ")
+                                   private$.history <- c(private$.history, entry)
+                                   invisible(self)
+                                 }
+                                 clear_history = function(){
+                                   private$.history <- NULL
+                                   invisible(self)
+                                 }
                                ),
                                active = list(
                                  col_names = function(value){
@@ -110,7 +120,10 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.col_names
                                    } else {
                                      require_char(value, "`$col_names`")
-                                     private$.col_names <- value
+                                     if(!identical(private$.col_names, value)){
+                                       private$.col_names <- value
+                                       private$push_history(value, field = "`$col_names`")
+                                     }
                                      self
                                    }
                                  },
@@ -119,7 +132,10 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.col_types
                                    } else {
                                      require_char(value, "`$col_types`")
-                                     private$.col_types <- value
+                                     if(!identical(private$.col_types, value)){
+                                       private$.col_types <- value
+                                       private$push_history(value, field = "`$col_types`")
+                                     }
                                      self
                                    }
                                  },
@@ -128,7 +144,10 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.keys
                                    } else {
                                      require_char(value, "`$keys`")
-                                     private$.keys <- value
+                                     if(!identical(private$.keys, value)){
+                                       private$.keys <- value
+                                       private$push_history(value, feild = "`$keys`")
+                                     }
                                      self
                                    }
                                  },
@@ -137,6 +156,13 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.md5sum
                                    } else {
                                      abort("`$md5sum` is read only. Value depends on disk image of `$data`.")
+                                   }
+                                 },
+                                 history = function(value){
+                                   if(missing(value)){
+                                     private$.history
+                                   } else {
+                                     abort("`$history` is read only.")
                                    }
                                  }
                                  ),
@@ -202,7 +228,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    if(file.exists(self$path)){
                                      private$md5sum <- tools::md5sum(self$path)
                                    } else {
-                                     warn("`$path` is not exist. Please write table to update md5sum.")
+                                     warn("`$path` does not exist. Please write table to update md5sum.")
                                    }
                                    invisible(self)
                                  },
@@ -212,7 +238,12 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                   append = F){
                                    file <- full_path(file)
                                    data.table::fwrite(x = data, file = file, sep = sep, append = append)
-                                   private$md5sum <- tools::md5sum(files = file)
+                                   .md5sum<- tools::md5sum(files = file)
+                                   if(!identical(private$md5sum, .md5sum)){
+                                     private$.md5sum <- .md5sum
+                                     private$push_history(value = .md5sum, field = "`$md5sum`")
+                                   }
+                                   invisible(self)
                                  },
                                  read = function() {
                                    if(file.exists(self$path)){
@@ -251,6 +282,16 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                           i.j = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2]))],
                                           i.j.by = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2])), by = by],
                                           self$data)
+                                   hist <- switch(fncID,
+                                                  j = str_c("Mutated `$data` column(s) by expression ", j),
+                                                  j.by = str_c("Mutated `$data` column(s) by expression ", j,
+                                                               " and grouped by: ", str_c(by, collapse = ", ")),
+                                                  i.j = str_c("Mutated `$data` column(s) by expression ", j,
+                                                              " on rows matching ", i),
+                                                  i.j.by = str_c("Mutated `$data` column(s) by expression ", j,
+                                                                 " on rows matching ", i,
+                                                                 " and grouped by: ", str_c(by, collapse = ", ")))
+                                   private$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  filter = function(i = NULL, deparse = TRUE){
@@ -261,6 +302,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      return(self)
                                    }
                                    self$data <- self$data[ eval(parse(text = i)),]
+                                   private$push_history(custom = str_c("Filtered `$data` for rows matching ", i))
                                    invisible(self)
                                  },
                                  summarise = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
@@ -276,6 +318,16 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                        j.by = self$data[, eval(parse(text = j)), by = by],
                                                        i.j = self$data[eval(parse(text = i)), eval(parse(text = j))],
                                                        i.j.by = self$data[eval(parse(text = i)), eval(parse(text = j)), by = by])
+                                   hist <- switch(fncID,
+                                                  j = str_c("Summarised `$data` column(s) by expression ", j),
+                                                  j.by = str_c("Summarised `$data` column(s) by expression ", j,
+                                                               " and grouped by: ", str_c(by, collapse = ", ")),
+                                                  i.j = str_c("Summarised `$data` column(s) by expression ", j,
+                                                              " on rows matching ", i),
+                                                  i.j.by = str_c("Summarised `$data` column(s) by expression ", j,
+                                                                 " on rows matching ", i,
+                                                                 " and grouped by: ", str_c(by, collapse = ", ")))
+                                   private$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  reshape_wider = function(cols,
@@ -292,6 +344,11 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                         formula = str_c("... ~ ",str_c(wrap_str(cols), collapse = " + ")),
                                                         value.var = value.var)
                                    }
+                                   hist <- str_c("`$data` was reshaped into a wider format:\n",
+                                                 "  new columns mapped from: ", str_c(cols, collapse = ", "), "\n",
+                                                 "  new values mapped from: ", str_c(value.var, collapse = ", "),"\n",
+                                                 "  Aggregate Function(s): ", parse_fun_list(fun.aggregate))
+                                   private$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  reshape_longer = function(measure.vars,
@@ -301,6 +358,12 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                         measure.vars = measure.vars,
                                         variable.name = variable.name,
                                         value.name = value.name)
+                                   meta <- capture.output(melt_meta(measure.vars = measure.vars, variable.name = variable.name, value.name = value.name))
+                                   meta <- str_c("  ", meta, "\n", collapse = "")
+                                   hist <- str_c("`$data` was reshaped into a longer format:\n",
+                                                 "  Reshape Meta data:\n",
+                                                 meta)
+                                   private$push_history(custom = hist)
                                    invisible(self)
 
                                  },
@@ -335,7 +398,7 @@ t$copy(deep = T)$trans(j = list(Sepal.Length = Sepal.Length^2), i = Species %in%
 #' @title DataManR
 #' @name DataManR
 #' @export
-DataManR <- proto::proto(Tables = list(),
+DataManR <- R6::R6Class(Tables = list(),
                   links = data.frame(LeftTable = character(),
                                      LeftKey = character(),
                                      RightTable = character(),
