@@ -13,7 +13,7 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                                   require_scalar_char(value, "`$name`")
                                   if(!identical(private$.name, value)){
                                     private$.name <- value
-                                    private$push_history(value, field = "`$name`")
+                                    self$push_history(value, field = "`$name`")
                                   }
                                   self
                                 }
@@ -26,7 +26,7 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                                   value <- value %na% full_path(value)
                                   if(!identical(private$.path, value)){
                                     private$.path <- value
-                                    private$push_history(value, field = "`$path`")
+                                    self$push_history(value, field = "`$path`")
                                   }
                                   self
                                 }
@@ -37,12 +37,6 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                               .path = NA_character_,
                               .history = NULL,
                               .time = NULL,
-                              push_history = function(value = "", field = "", verb = "changed", collapse = ", ", custom = NULL){
-                                entry <- custom %||% str_c(field, verb, "to:", str_c(value, collapse = collapse), sep = " ")
-                                private$.history <- c(private$.history, entry)
-                                private$.time <- c(private$.time, as.character(now()))
-                                invisible(self)
-                              },
                               clear_history = function(){
                                 private$.history <- NULL
                                 private$.time <- NULL
@@ -89,6 +83,12 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                                   .hist <- str_c(.time, "::", str_replace_all(.hist, "\n", "\n                     "))
                                 }
                                 return(structure(.hist, class = "dt_history"))
+                              },
+                              push_history = function(value = "", field = "", verb = "changed", collapse = ", ", custom = NULL){
+                                entry <- custom %||% str_c(field, verb, "to:", str_c(value, collapse = collapse), sep = " ")
+                                private$.history <- c(private$.history, entry)
+                                private$.time <- c(private$.time, as.character(now()))
+                                invisible(self)
                               }
                             )
                        )
@@ -145,7 +145,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      require_char(value, "`$col_names`")
                                      if(!identical(private$.col_names, value)){
                                        private$.col_names <- value
-                                       private$push_history(value, field = "`$col_names`")
+                                       self$push_history(value, field = "`$col_names`")
                                      }
                                      self
                                    }
@@ -157,7 +157,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      require_char(value, "`$col_types`")
                                      if(!identical(private$.col_types, value)){
                                        private$.col_types <- value
-                                       private$push_history(value, field = "`$col_types`")
+                                       self$push_history(value, field = "`$col_types`")
                                      }
                                      self
                                    }
@@ -169,7 +169,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      require_char(value, "`$keys`")
                                      if(!identical(private$.keys, value)){
                                        private$.keys <- value
-                                       private$push_history(value, feild = "`$keys`")
+                                       self$push_history(value, feild = "`$keys`")
                                      }
                                      self
                                    }
@@ -207,7 +207,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                        "  keys  : ", paste(self$keys,collapse =", "),"\n", sep = "")
                                   if(!is.null(self$data)){
                                     cat("  Data  : \n")
-                                    print(head(self$data))
+                                    print(x = head(self$data))
                                   }
                                  },
                                  validate = function(){
@@ -257,7 +257,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    .md5sum<- tools::md5sum(files = file)
                                    if(!identical(private$md5sum, .md5sum)){
                                      private$.md5sum <- .md5sum
-                                     private$push_history(value = .md5sum, field = "`$md5sum`")
+                                     self$push_history(value = .md5sum, field = "`$md5sum`")
                                    }
                                    invisible(self)
                                  },
@@ -307,7 +307,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                   i.j.by = str_c("Mutated `$data` column(s) by expression ", j,
                                                                  " on rows matching ", i,
                                                                  " and grouped by: ", str_c(by, collapse = ", ")))
-                                   private$push_history(custom = hist)
+                                   self$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  filter = function(i = NULL, deparse = TRUE){
@@ -318,7 +318,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      return(self)
                                    }
                                    self$data <- self$data[ eval(parse(text = i)),]
-                                   private$push_history(custom = str_c("Filtered `$data` for rows matching ", i))
+                                   self$push_history(custom = str_c("Filtered `$data` for rows matching ", i))
                                    invisible(self)
                                  },
                                  summarise = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
@@ -343,7 +343,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                   i.j.by = str_c("Summarised `$data` column(s) by expression ", j,
                                                                  " on rows matching ", i,
                                                                  " and grouped by: ", str_c(by, collapse = ", ")))
-                                   private$push_history(custom = hist)
+                                   self$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  reshape_wider = function(cols,
@@ -364,7 +364,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                  "  new columns mapped from: ", str_c(cols, collapse = ", "), "\n",
                                                  "  new values mapped from: ", str_c(value.var, collapse = ", "),"\n",
                                                  "  Aggregate Function(s): ", parse_fun_list(fun.aggregate))
-                                   private$push_history(custom = hist)
+                                   self$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  reshape_longer = function(measure.vars,
@@ -381,7 +381,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    hist <- str_c("`$data` was reshaped into a longer format:\n",
                                                  "  Reshape Meta data:\n",
                                                  meta)
-                                   private$push_history(custom = hist)
+                                   self$push_history(custom = hist)
                                    invisible(self)
 
                                  },
@@ -419,17 +419,29 @@ for(i in 1:length(new_level)){
 #' @name DataManR
 #' @export
 DataManR <- R6::R6Class(classname = "DataManR",
-                        inherit = "BaseDMR",
+                        inherit = BaseDMR,
                         private = list(
                           links = data.frame(LeftTable = character(),
                                              LeftKey = character(),
                                              RightTable = character(),
-                                             RightKey = character())
+                                             RightKey = character()),
+                          join = function(x, y,
+                                          by.x = NULL,
+                                          by.y = NULL,
+                                          all.x = FALSE,
+                                          all.y = FALSE,
+                                          sort = TRUE,
+                                          suffixes = c(".x",".y")){
+                            merge(x, y, by.x = by.x, by.y = by.y, all.x = all.x, all.y = all.y)
+                          }
                         ),
                         active = list(),
                         public = list(
-                          viewing = NULL,
+                          view = NULL,
                           Tables = list(),
+                          show_link = function(){
+                            private$links
+                          },
                           setTableLink = function(LeftTable, LeftKey, RightTable, RightKey) {
                             if(!all(names(self$Tables)%in%c(LeftTable, RightTable))){
                               rlang::abort("{LeftTable} and/or {RightTable} are not accessible by Data Manager {self$name}.\n")
@@ -450,10 +462,41 @@ DataManR <- R6::R6Class(classname = "DataManR",
                                                         RightTable = RightTable,
                                                         RightKey = RightKey))
                           },
+                          pull_key_pairs = function(x,y){
+                            private$links %>%
+                              filter((LeftTable %in% x & RightTable %in% y)|
+                                      (LeftTable %in% y & RightTable %in% x)) %>%
+                              mutate(by.x = case_when(LeftTable %in% x ~ LeftKey,
+                                                      RightTable %in% x ~ RightKey,
+                                                      TRUE ~ NA_character_),
+                                     by.y = case_when(LeftTable %in% y ~ LeftKey,
+                                                      RightTable %in% y ~ RightKey,
+                                                      TRUE ~ NA_character_)) %>%
+                              select(by.x, by.y)
+                          },
+                          full_join = function(x, y){
+                            self$view <- x
+                            keys_pairs <- self$pull_key_pairs(x$name, y$name)
+                            validate_error(
+                              need2(nrow(keys_pairs)>0, glue("{x$name} and {y$name} do not have any common keys set!")),
+                              need2(any(is.na(keys_pairs$by.x)|is.na(keys_pairs$by.y)),
+                                    glue("Check `$pull_key_pairs(x = \"{x$name}\", y = \"{y$name}\")` and correct key pairs."))
+                            )
+                            self$view$data <- private$join(x = x$data,
+                                                           y = y$data,
+                                                           by.x = keys_pairs$by.x,
+                                                           by.y = keys_pairs$by.y,
+                                                           all.x = T,
+                                                           all.y = T,
+                                                           suffixes = c(str_c(".",x$name)), str_c(".",y$name))
+
+                            invisible(self)
+                          },
                           addTable = function(def){
-                            if(def$name%in%names(self$Tables)){
-                              rlang::abort(glue("There already exists a table named {def$name} in {self$name}.\n"))
-                            }
+                            validate_error(
+                              need2(!is.na(def$name), "Table Definition provided MUST have a name!"),
+                              need2(!def$name%in%names(self$Tables), glue("There already exists a table named {def$name} in {self$name}"))
+                            )
                             self$Tables[[def$name]] <- def
                           },
                           rmTable = function(def){
@@ -513,6 +556,9 @@ DataManR <- R6::R6Class(classname = "DataManR",
                                 "    Path: ", self$path,"\n", sep = "")
                           }
                         ))
+
+dm <- DataManR$new("Test1", path = ".")
+dm$addTable(d)
 
 #' @title load_DataManR
 #' @rdname load_DataManR
@@ -587,3 +633,6 @@ load_DataManR <- function(file, force_load_data = F){
 #   class(tmp) <- c("DataManR",class(tmp))
 #   return(tmp)
 # }
+
+
+
