@@ -391,13 +391,13 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    clone_
                                  }
                                ))
-d <- TableDefinition$new(us_rent_income)
-d$reshape_wider(cols = "variable", value.var = c("estimate","moe"))
-d$reshape_longer(measure.vars = list(c("estimate_income","estimate_rent"),c("moe_income","moe_rent")), value.name = c("estimate","moe"))
-new_level <- c("income","rent")
-for(i in 1:length(new_level)){
-  d$data[variable%in% i, `:=`(variable = new_level[i])]
-}
+# d <- TableDefinition$new(us_rent_income)
+# d$reshape_wider(cols = "variable", value.var = c("estimate","moe"))
+# d$reshape_longer(measure.vars = list(c("estimate_income","estimate_rent"),c("moe_income","moe_rent")), value.name = c("estimate","moe"))
+# new_level <- c("income","rent")
+# for(i in 1:length(new_level)){
+#   d$data[variable%in% i, `:=`(variable = new_level[i])]
+# }
 
 #' @title TableDef Methods
 #' @name TableDef_methods
@@ -552,13 +552,14 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           },
                           print = function(){
                             cat("DMRStructure:\n",
-                                "    Name: ", self$name,"\n",
-                                "    Path: ", self$path,"\n", sep = "")
+                                "    Name    : ", self$name,"\n",
+                                "    Path    : ", self$path,"\n",
+                                "    Managing: ", length(self$Tables), sep = "")
                           }
                         ))
 
-dm <- DataManR$new("Test1", path = ".")
-dm$addTable(d)
+# dm <- DataManR$new("Test1", path = ".")
+# dm$addTable(d)
 
 #' @title load_DataManR
 #' @rdname load_DataManR
