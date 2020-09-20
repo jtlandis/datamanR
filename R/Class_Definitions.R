@@ -200,11 +200,11 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      self$col_types <- colclasses(self$data)
                                    }
                                    if(file.exists(self$path)){
-                                     self$md5sum <- tools::md5sum(self$path)
+                                     private$md5sum <- tools::md5sum(self$path)
                                    } else {
                                      warn("`$path` is not exist. Please write table to update md5sum.")
                                    }
-                                   self
+                                   invisible(self)
                                  },
                                  write = function(data = self$data,
                                                   file = self$path,
@@ -231,7 +231,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  save = function(location = dirname(self$path), name = paste0(self$name, "_tableDef.rds")){
                                    saveRDS(object = self, file = paste0(location,"/", name))
                                  },
-                                 trans = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
+                                 mutate = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
                                    #browser()
                                    if(deparse){
                                      i <- deparse(substitute(i))
@@ -251,7 +251,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                           i.j = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2]))],
                                           i.j.by = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2])), by = by],
                                           self$data)
-                                   self
+                                   invisible(self)
                                  },
                                  filter = function(i = NULL, deparse = TRUE){
                                    if(deparse){
@@ -261,7 +261,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      return(self)
                                    }
                                    self$data <- self$data[ eval(parse(text = i)),]
-                                   self
+                                   invisible(self)
                                  },
                                  summarise = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
                                   # browser()
@@ -276,7 +276,33 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                        j.by = self$data[, eval(parse(text = j)), by = by],
                                                        i.j = self$data[eval(parse(text = i)), eval(parse(text = j))],
                                                        i.j.by = self$data[eval(parse(text = i)), eval(parse(text = j)), by = by])
-                                   self
+                                   invisible(self)
+                                 },
+                                 reshape_wider = function(cols,
+                                                          value.var = guess(self$data),
+                                                          fun.aggregate = NULL){
+
+                                   if(!is.null(fun.aggregate)){
+                                     self$data <- dcast(self$data,
+                                                        formula = str_c("... ~ ",str_c(wrap_str(cols), collapse = " + ")),
+                                                        value.var = value.var,
+                                                        fun.aggregate = fun.aggregate)
+                                   } else {
+                                     self$data <- dcast(self$data,
+                                                        formula = str_c("... ~ ",str_c(wrap_str(cols), collapse = " + ")),
+                                                        value.var = value.var)
+                                   }
+                                   invisible(self)
+                                 },
+                                 reshape_longer = function(measure.vars,
+                                                           variable.name = "variable",
+                                                           value.name = "value"){
+                                   self$data <- melt(self$data,
+                                        measure.vars = measure.vars,
+                                        variable.name = variable.name,
+                                        value.name = value.name)
+                                   invisible(self)
+
                                  },
                                  copy = function(deep = FALSE){
                                    clone_ <- self$clone(deep = deep)
@@ -284,7 +310,8 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    clone_
                                  }
                                ))
-
+d <- TableDefinition$new(us_rent_income)
+d$reshape_wider(cols = nam, value.var = val)
 t <- TableDefinition$new(iris)
 t2 <-t$copy()
 t$copy()$summarise(j = list(test = Sepal.Length+5))

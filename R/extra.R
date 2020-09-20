@@ -131,3 +131,16 @@ check_expr <- function(expr){
   if(length(expr)==0) return(FALSE)
   return(expr)
 }
+
+wrap_str <- function(str){
+  special_chr <- c(" ","~","!","@","#","$","%",
+                   "^","&","*","(",")","-","+",
+                   "=","{","}","[","]","|","?",
+                   "<",">",",","/",":",";","`")
+  litteral_pattern <- str_c("^\\.?[0-9]\\|", str_c("\\",special_chr, collapse = "|"), collapse = "")
+  str2 <- ifelse(str_detect(str,
+                           pattern = litteral_pattern),
+                str_c("`",str,"`"),
+                str)
+  return(str2)
+}
