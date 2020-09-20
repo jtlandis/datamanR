@@ -171,3 +171,7 @@ melt_meta <- function(measure.vars, variable.name, value.name){
 str_group <- function(str){
   str_c("(", str_c(str, collapse = "|"),")")
 }
+
+print.dt_history <- function(x){
+  cat(x, sep = "\n")
+}
