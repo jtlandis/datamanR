@@ -180,6 +180,13 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    } else {
                                      abort("`$md5sum` is read only. Value depends on disk image of `$data`.")
                                    }
+                                 },
+                                 rds_file = function(value) {
+                                   if(missing(value)){
+                                     str_c(dirname(self$path),"/",self$name,"_TableDef.rds")
+                                   } else {
+                                     abort("`$rds_file` is read only!")
+                                   }
                                  }
                                  ),
                                public = list(
@@ -275,7 +282,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    }
                                    return(data_table)
                                  },
-                                 save = function(location = dirname(self$path), name = paste0(self$name, "_tableDef.rds")){
+                                 save = function(file = self$rds_file){
                                    saveRDS(object = self, file = paste0(location,"/", name))
                                  },
                                  mutate = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
@@ -390,7 +397,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    clone_$data <- copy(self$data)
                                    clone_
                                  }
-                               ))
+                               ), )
 # d <- TableDefinition$new(us_rent_income)
 # d$reshape_wider(cols = "variable", value.var = c("estimate","moe"))
 # d$reshape_longer(measure.vars = list(c("estimate_income","estimate_rent"),c("moe_income","moe_rent")), value.name = c("estimate","moe"))
@@ -435,7 +442,15 @@ DataManR <- R6::R6Class(classname = "DataManR",
                             merge(x, y, by.x = by.x, by.y = by.y, all.x = all.x, all.y = all.y)
                           }
                         ),
-                        active = list(),
+                        active = list(
+                          rds_file = function(value) {
+                            if(missing(value)){
+                              str_c(self$path,"/",self$name,"_DataManR.rds")
+                            } else {
+                              abort("`$rds_file` is read only!")
+                            }
+                          }
+                        ),
                         public = list(
                           view = NULL,
                           Tables = list(),
@@ -503,17 +518,16 @@ DataManR <- R6::R6Class(classname = "DataManR",
                             def$save()
                             self$Tables[[def$name]] <- NULL
                           },
-                          save = function(location = dirname(self$path),
-                                          name = str_c(self$name, "_DataManR.rds"),
+                          save = function(file = self$rds_file,
                                           saveData = F){
                             clone_ <- self$copy(deep = T)
-                            if(!save_data){
+                            if(!saveData){
                               clone_$Tables <- lapply(clone_$Tables, function(x){
                                 x$data <- NULL
                                 return(x)
                               })
                             }
-                            saveRDS(object = clone_, file = str_c(location,"/", name))
+                            saveRDS(object = clone_, file = file)
                             # fs::file_chown(path = path, user_id = .$owner, group_id = .$group)
                             # fs::file_chmod(path = path, mode = .$access)
                             invisible(self)

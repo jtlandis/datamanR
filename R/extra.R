@@ -2,6 +2,7 @@
 #' @import glue
 #' @import data.table
 #' @importFrom rlang abort warn
+#' @importFrom lubridate now
 #' @import stringr
 #' @import shiny
 
@@ -46,29 +47,6 @@ full_path <- function(path) {
   bas_ <- ifelse(dotdot, "", basename(path))
   return(paste(normalizePath(dir_),bas_, sep = ifelse(dotdot,"",slash)))
 }
-
-#' @export
-print.def <- function(x){
-  .df <- data.frame(col_names = x$col_names,
-                    col_types = x$col_types,
-                    row.names = NULL)
-  .df$keys <- ifelse(.df$col_names%in%x$keys, T, F)
-  cat("name: ",x$name,
-      "\npath: ", x$file,"\n")
-  data <- x$data
-  if(!is.null(data)) {
-    cat("nrow: ", nrow(data),"\n")
-  }
-  print(.df)
-}
-
-#' @export
-print.DataManR <- function(x){
-  cat("name: ", x$name,
-      "\npath: ", x$path,"\n")
-  x$Tables
-}
-
 
 validate_error <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
