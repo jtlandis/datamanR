@@ -11,7 +11,10 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                                   private$.name
                                 } else{
                                   require_scalar_char(value, "`$name`")
-                                  private$.name <- value
+                                  if(!identical(private$.name, value)){
+                                    private$.name <- value
+                                    self$push_history(value, field = "`$name`")
+                                  }
                                   self
                                 }
                               },
@@ -21,14 +24,24 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                                 } else {
                                   require_scalar_char(value, "`$path`")
                                   value <- value %na% full_path(value)
-                                  private$.path <- value
+                                  if(!identical(private$.path, value)){
+                                    private$.path <- value
+                                    self$push_history(value, field = "`$path`")
+                                  }
                                   self
                                 }
                               }
                               ),
                             private = list(
                               .name = NA_character_,
-                              .path = NA_character_
+                              .path = NA_character_,
+                              .history = NULL,
+                              .time = NULL,
+                              clear_history = function(){
+                                private$.history <- NULL
+                                private$.time <- NULL
+                                invisible(self)
+                              }
                             ),
                             public = list(
                               initialize = function(name = NA_character_, path = NA_character_){
@@ -56,6 +69,26 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                                 cat("DMRStructure:\n",
                                     "    Name: ", self$name,"\n",
                                     "    Path: ", self$path,"\n", sep = "")
+                              },
+                              history = function(n = 5, fun = "tail", time = F){
+                                if(is.null(n)){
+                                  n <- length(private$.history)
+                                }
+                                fun <- switch(fun,
+                                              tail = tail,
+                                              head = head)
+                                .hist <- fun(private$.history, n = n)
+                                if(time){
+                                  .time <- fun(private$.time, n = n)
+                                  .hist <- str_c(.time, "::", str_replace_all(.hist, "\n", "\n                     "))
+                                }
+                                return(structure(.hist, class = "dt_history"))
+                              },
+                              push_history = function(value = "", field = "", verb = "changed", collapse = ", ", custom = NULL){
+                                entry <- custom %||% str_c(field, verb, "to:", str_c(value, collapse = collapse), sep = " ")
+                                private$.history <- c(private$.history, entry)
+                                private$.time <- c(private$.time, as.character(now()))
+                                invisible(self)
                               }
                             )
                        )
@@ -110,7 +143,10 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.col_names
                                    } else {
                                      require_char(value, "`$col_names`")
-                                     private$.col_names <- value
+                                     if(!identical(private$.col_names, value)){
+                                       private$.col_names <- value
+                                       self$push_history(value, field = "`$col_names`")
+                                     }
                                      self
                                    }
                                  },
@@ -119,7 +155,10 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.col_types
                                    } else {
                                      require_char(value, "`$col_types`")
-                                     private$.col_types <- value
+                                     if(!identical(private$.col_types, value)){
+                                       private$.col_types <- value
+                                       self$push_history(value, field = "`$col_types`")
+                                     }
                                      self
                                    }
                                  },
@@ -128,7 +167,10 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.keys
                                    } else {
                                      require_char(value, "`$keys`")
-                                     private$.keys <- value
+                                     if(!identical(private$.keys, value)){
+                                       private$.keys <- value
+                                       self$push_history(value, feild = "`$keys`")
+                                     }
                                      self
                                    }
                                  },
@@ -137,6 +179,13 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      private$.md5sum
                                    } else {
                                      abort("`$md5sum` is read only. Value depends on disk image of `$data`.")
+                                   }
+                                 },
+                                 rds_file = function(value) {
+                                   if(missing(value)){
+                                     str_c(dirname(self$path),"/",self$name,"_TableDef.rds")
+                                   } else {
+                                     abort("`$rds_file` is read only!")
                                    }
                                  }
                                  ),
@@ -165,7 +214,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                        "  keys  : ", paste(self$keys,collapse =", "),"\n", sep = "")
                                   if(!is.null(self$data)){
                                     cat("  Data  : \n")
-                                    print(head(self$data))
+                                    print(x = head(self$data))
                                   }
                                  },
                                  validate = function(){
@@ -202,7 +251,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    if(file.exists(self$path)){
                                      private$md5sum <- tools::md5sum(self$path)
                                    } else {
-                                     warn("`$path` is not exist. Please write table to update md5sum.")
+                                     warn("`$path` does not exist. Please write table to update md5sum.")
                                    }
                                    invisible(self)
                                  },
@@ -212,7 +261,12 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                   append = F){
                                    file <- full_path(file)
                                    data.table::fwrite(x = data, file = file, sep = sep, append = append)
-                                   private$md5sum <- tools::md5sum(files = file)
+                                   .md5sum<- tools::md5sum(files = file)
+                                   if(!identical(private$md5sum, .md5sum)){
+                                     private$.md5sum <- .md5sum
+                                     self$push_history(value = .md5sum, field = "`$md5sum`")
+                                   }
+                                   invisible(self)
                                  },
                                  read = function() {
                                    if(file.exists(self$path)){
@@ -228,7 +282,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    }
                                    return(data_table)
                                  },
-                                 save = function(location = dirname(self$path), name = paste0(self$name, "_tableDef.rds")){
+                                 save = function(file = self$rds_file){
                                    saveRDS(object = self, file = paste0(location,"/", name))
                                  },
                                  mutate = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
@@ -251,6 +305,16 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                           i.j = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2]))],
                                           i.j.by = self$data[ eval(parse(text=text[1])), eval(parse(text=text[2])), by = by],
                                           self$data)
+                                   hist <- switch(fncID,
+                                                  j = str_c("Mutated `$data` column(s) by expression ", j),
+                                                  j.by = str_c("Mutated `$data` column(s) by expression ", j,
+                                                               " and grouped by: ", str_c(by, collapse = ", ")),
+                                                  i.j = str_c("Mutated `$data` column(s) by expression ", j,
+                                                              " on rows matching ", i),
+                                                  i.j.by = str_c("Mutated `$data` column(s) by expression ", j,
+                                                                 " on rows matching ", i,
+                                                                 " and grouped by: ", str_c(by, collapse = ", ")))
+                                   self$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  filter = function(i = NULL, deparse = TRUE){
@@ -261,6 +325,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      return(self)
                                    }
                                    self$data <- self$data[ eval(parse(text = i)),]
+                                   self$push_history(custom = str_c("Filtered `$data` for rows matching ", i))
                                    invisible(self)
                                  },
                                  summarise = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
@@ -276,6 +341,16 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                        j.by = self$data[, eval(parse(text = j)), by = by],
                                                        i.j = self$data[eval(parse(text = i)), eval(parse(text = j))],
                                                        i.j.by = self$data[eval(parse(text = i)), eval(parse(text = j)), by = by])
+                                   hist <- switch(fncID,
+                                                  j = str_c("Summarised `$data` column(s) by expression ", j),
+                                                  j.by = str_c("Summarised `$data` column(s) by expression ", j,
+                                                               " and grouped by: ", str_c(by, collapse = ", ")),
+                                                  i.j = str_c("Summarised `$data` column(s) by expression ", j,
+                                                              " on rows matching ", i),
+                                                  i.j.by = str_c("Summarised `$data` column(s) by expression ", j,
+                                                                 " on rows matching ", i,
+                                                                 " and grouped by: ", str_c(by, collapse = ", ")))
+                                   self$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  reshape_wider = function(cols,
@@ -292,6 +367,11 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                                         formula = str_c("... ~ ",str_c(wrap_str(cols), collapse = " + ")),
                                                         value.var = value.var)
                                    }
+                                   hist <- str_c("`$data` was reshaped into a wider format:\n",
+                                                 "  new columns mapped from: ", str_c(cols, collapse = ", "), "\n",
+                                                 "  new values mapped from: ", str_c(value.var, collapse = ", "),"\n",
+                                                 "  Aggregate Function(s): ", parse_fun_list(fun.aggregate))
+                                   self$push_history(custom = hist)
                                    invisible(self)
                                  },
                                  reshape_longer = function(measure.vars,
@@ -301,6 +381,14 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                         measure.vars = measure.vars,
                                         variable.name = variable.name,
                                         value.name = value.name)
+                                   meta <- capture.output(melt_meta(measure.vars = measure.vars,
+                                                                    variable.name = variable.name,
+                                                                    value.name = value.name))
+                                   meta <- str_c("  ", meta, "\n", collapse = "")
+                                   hist <- str_c("`$data` was reshaped into a longer format:\n",
+                                                 "  Reshape Meta data:\n",
+                                                 meta)
+                                   self$push_history(custom = hist)
                                    invisible(self)
 
                                  },
@@ -309,13 +397,15 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    clone_$data <- copy(self$data)
                                    clone_
                                  }
-                               ))
-d <- TableDefinition$new(us_rent_income)
-d$reshape_wider(cols = nam, value.var = val)
-t <- TableDefinition$new(iris)
-t2 <-t$copy()
-t$copy()$summarise(j = list(test = Sepal.Length+5))
-t$copy(deep = T)$trans(j = list(Sepal.Length = Sepal.Length^2), i = Species %in% "setosa")
+                               ), )
+# d <- TableDefinition$new(us_rent_income)
+# d$reshape_wider(cols = "variable", value.var = c("estimate","moe"))
+# d$reshape_longer(measure.vars = list(c("estimate_income","estimate_rent"),c("moe_income","moe_rent")), value.name = c("estimate","moe"))
+# new_level <- c("income","rent")
+# for(i in 1:length(new_level)){
+#   d$data[variable%in% i, `:=`(variable = new_level[i])]
+# }
+
 #' @title TableDef Methods
 #' @name TableDef_methods
 #' @description Methods of TableDef
@@ -335,109 +425,155 @@ t$copy(deep = T)$trans(j = list(Sepal.Length = Sepal.Length^2), i = Species %in%
 #' @title DataManR
 #' @name DataManR
 #' @export
-DataManR <- proto::proto(Tables = list(),
-                  links = data.frame(LeftTable = character(),
-                                     LeftKey = character(),
-                                     RightTable = character(),
-                                     RightKey = character()),
-                  name = NA_character_,
-                  path = NA_character_,
-                  message = NA_character_,
-                  permission = "public",
-                  owner = NA_character_,
-                  group = NA_character_,
-                  access = "774", #a convience value
-                  setManName = function(., name = .$name){ .$name <- name},
-                  setManPath = function(., path = .$path) { .$path <- path %na% full_path(path)},
-                  setManMess = function(., message = .$message) { .$message <- message},
-                  setGroup = function(., group = .$group) { .$group <- group},
-                  setPermission = function(., permission = .$permission) {
-                    if(!is.element(permission, c("public","private"))){
-                      abort("{permission} is not a valid permission")
-                    }
-                    .$access <- switch (permission,
-                      public = "774", #Anyone in group can modify
-                      private = "744" #Only user can modify
-                    )
-                    .$permission <- permission
-                  },
-                  validManName = function(.) !is.na(.$name)&&str_length(.$name)>0,
-                  validManPath = function(.) !is.na(.$path)&&dir.exists(.$path),
-                  setTableLink = function(., LeftTable, LeftKey, RightTable, RightKey) {
-                    if(!all(names(.$Tables)%in%c(LeftTable, RightTable))){
-                      rlang::abort("{LeftTable} and/or {RightTable} are not accessible by Data Manager {.$name}.\n")
-                    }
-                    errors <- c()
-                    if(!LeftKey%in%.$Tables[[LeftTable]]$col_names){
-                      errors <- c(errors, glue("{LeftKey} is not a column name in {LeftTable}."))
-                    }
-                    if(!RightKey%in%.$Tables[[RightTable]]$col_names){
-                      errors <- c(errors, glue("{RightKey} is not a column name in {RightTable}."))
-                    }
-                    if(length(errors)>0){
-                      rlang::abort(glue_collapse(errors, sep = "\n"))
-                    }
-                    .$links <- rbind(.$links,
-                                     data.frame(LeftTable = LeftTable,
-                                                LeftKey = LeftKey,
-                                                RightTable = RightTable,
-                                                RightKey = RightKey))
-                  },
-                  addTable = function(., def){
-                    if(def$name%in%names(.$Tables)){
-                      rlang::abort(glue("There already exists a table named {def$name} in {.$name}.\n"))
-                    }
-                    .$Tables[[def$name]] <- def
-                  },
-                  rmTable = function(., def){
-                    def$save(location = .$path)
-                    .$Tables[[def$name]] <- NULL
-                  },
-                  save = function(., location, saveData = F){
-                    if(!save_data){
-                      .$Tables <- lapply(.$Tables, function(x){
-                        x$setTableData(data = NULL)
-                        return(x)
-                      })
-                    }
-                    path <- paste0(location,"/",.$name,"_DataManR.rds")
-                    saveRDS(., file = path)
-                    fs::file_chown(path = path, user_id = .$owner, group_id = .$group)
-                    fs::file_chmod(path = path, mode = .$access)
-                  },
-                  updateClass = function(.) {
-                    .$setManPath(.$path)
-                  },
-                  isValid = function(.){
-                    errors <- c()
-                    if(!.$validManName()){
-                      errors <- c(errors, glue("Data Manager name is not defined."))
-                    }
-                    if(is.na(.$path)){
-                      errors <- c(errors, glue("Data Manager path is not defined."))
-                    } else if(!dir.exists(.$path)) {
-                      rlang::warn(glue("{.$path} does not exist yet."))
-                    }
-                    if(length(errors)>0) {
-                      rlang::warn(glue_collapse(errors, sep = "\n"))
-                      .$setManMess(errors)
-                      return(FALSE)
-                    } else {
-                      .$setManMess(NULL)
-                      return(TRUE)
-                    }
+DataManR <- R6::R6Class(classname = "DataManR",
+                        inherit = BaseDMR,
+                        private = list(
+                          links = data.frame(LeftTable = character(),
+                                             LeftKey = character(),
+                                             RightTable = character(),
+                                             RightKey = character()),
+                          join = function(x, y,
+                                          by.x = NULL,
+                                          by.y = NULL,
+                                          all.x = FALSE,
+                                          all.y = FALSE,
+                                          sort = TRUE,
+                                          suffixes = c(".x",".y")){
+                            merge(x, y, by.x = by.x, by.y = by.y, all.x = all.x, all.y = all.y)
+                          }
+                        ),
+                        active = list(
+                          rds_file = function(value) {
+                            if(missing(value)){
+                              str_c(self$path,"/",self$name,"_DataManR.rds")
+                            } else {
+                              abort("`$rds_file` is read only!")
+                            }
+                          }
+                        ),
+                        public = list(
+                          view = NULL,
+                          Tables = list(),
+                          show_link = function(){
+                            private$links
+                          },
+                          setTableLink = function(LeftTable, LeftKey, RightTable, RightKey) {
+                            if(!all(names(self$Tables)%in%c(LeftTable, RightTable))){
+                              rlang::abort("{LeftTable} and/or {RightTable} are not accessible by Data Manager {self$name}.\n")
+                            }
+                            errors <- c()
+                            if(!LeftKey%in%self$Tables[[LeftTable]]$col_names){
+                              errors <- c(errors, glue("{LeftKey} is not a column name in {LeftTable}."))
+                            }
+                            if(!RightKey%in%self$Tables[[RightTable]]$col_names){
+                              errors <- c(errors, glue("{RightKey} is not a column name in {RightTable}."))
+                            }
+                            if(length(errors)>0){
+                              rlang::abort(glue_collapse(errors, sep = "\n"))
+                            }
+                            private$links <- rbind(private$links,
+                                             data.frame(LeftTable = LeftTable,
+                                                        LeftKey = LeftKey,
+                                                        RightTable = RightTable,
+                                                        RightKey = RightKey))
+                          },
+                          pull_key_pairs = function(x,y){
+                            private$links %>%
+                              filter((LeftTable %in% x & RightTable %in% y)|
+                                      (LeftTable %in% y & RightTable %in% x)) %>%
+                              mutate(by.x = case_when(LeftTable %in% x ~ LeftKey,
+                                                      RightTable %in% x ~ RightKey,
+                                                      TRUE ~ NA_character_),
+                                     by.y = case_when(LeftTable %in% y ~ LeftKey,
+                                                      RightTable %in% y ~ RightKey,
+                                                      TRUE ~ NA_character_)) %>%
+                              select(by.x, by.y)
+                          },
+                          full_join = function(x, y){
+                            self$view <- x
+                            keys_pairs <- self$pull_key_pairs(x$name, y$name)
+                            validate_error(
+                              need2(nrow(keys_pairs)>0, glue("{x$name} and {y$name} do not have any common keys set!")),
+                              need2(any(is.na(keys_pairs$by.x)|is.na(keys_pairs$by.y)),
+                                    glue("Check `$pull_key_pairs(x = \"{x$name}\", y = \"{y$name}\")` and correct key pairs."))
+                            )
+                            self$view$data <- private$join(x = x$data,
+                                                           y = y$data,
+                                                           by.x = keys_pairs$by.x,
+                                                           by.y = keys_pairs$by.y,
+                                                           all.x = T,
+                                                           all.y = T,
+                                                           suffixes = c(str_c(".",x$name)), str_c(".",y$name))
 
-                  },
-                  new = function(.,
-                                 Tables = .$Tables,
-                                 name = .$name,
-                                 links = .$links,
-                                 path = .$path) {
-                    tmp <- .$proto(Tables = Tables, name = name, links = links, path = path, owner = Sys.info()[["user"]], owner = Sys.info()[["user"]])
-                    tmp$isValid()
-                    class(tmp) <- c("DataManR",class(tmp))
-                    return(tmp)
-                  })
+                            invisible(self)
+                          },
+                          addTable = function(def){
+                            validate_error(
+                              need2(!is.na(def$name), "Table Definition provided MUST have a name!"),
+                              need2(!def$name%in%names(self$Tables), glue("There already exists a table named {def$name} in {self$name}"))
+                            )
+                            self$Tables[[def$name]] <- def
+                          },
+                          rmTable = function(def){
+                            def$save()
+                            self$Tables[[def$name]] <- NULL
+                          },
+                          save = function(file = self$rds_file,
+                                          saveData = F){
+                            clone_ <- self$copy(deep = T)
+                            if(!saveData){
+                              clone_$Tables <- lapply(clone_$Tables, function(x){
+                                x$data <- NULL
+                                return(x)
+                              })
+                            }
+                            saveRDS(object = clone_, file = file)
+                            # fs::file_chown(path = path, user_id = .$owner, group_id = .$group)
+                            # fs::file_chmod(path = path, mode = .$access)
+                            invisible(self)
+                          },
+                          copy = function(deep = FALSE){
+                            clone_ <- self$clone(deep = deep)
+                            clone_$Tables <- lapply(clone_$Tables, function(x){x$copy()})
+                            clone_
+                          },
+                          initialize = function(name = NA_character_,
+                                                path = NA_character_,
+                                                Tables = list()){
+                            self$name <- name
+                            self$path <- path
+                            self$Tables <- Tables
+                            self
+                          },
+                          validate = function(){
+                            validate_warn(
+                              need2(file.exists(self$path), glue("file: {self$path} does not exist yet!"))
+                            )
+                            validate_error(
+                              need2(!is.na(self$name), glue("`$name` is not defined: {self$name}")),
+                              need2(str_length(self$name)>0, glue("`$name` must have at least 1 character.")),
+                              need2(!is.na(self$path), glue("`$path` is not defined: {self$path}")),
+                              need2(dir.exists(dirname(self$path)), glue("directory: {dirname(self$path)} does not exist yet!"))
+                            )
+                            lapply(self$Tables, function(x) x$validate())
+                            TRUE
+                          },
+                          isValid = function(){
+                            tryCatch( expr = self$validate(),
+                                      error = function(err) {
+                                        message(glue("{err$message}\n")) ; F }
+                            )
+                          },
+                          print = function(){
+                            cat("DMRStructure:\n",
+                                "    Name    : ", self$name,"\n",
+                                "    Path    : ", self$path,"\n",
+                                "    Managing: ", length(self$Tables), sep = "")
+                          }
+                        ))
+
+# dm <- DataManR$new("Test1", path = ".")
+# dm$addTable(d)
 
 #' @title load_DataManR
 #' @rdname load_DataManR
@@ -451,17 +587,67 @@ load_DataManR <- function(file, force_load_data = F){
   DataMan <- readRDS(file = file)
   if(force_load_data){
     DataMan$Tables <- lapply(DataMan$Tables, function(x){
-      x$setTableData(data = x$read_table())
+      x$data <- x$read()
       return(x)
     })
   }
   return(DataMan)
 }
 
-# TableDef$read_table()
-# test <- TableDef$new(data = iris, name = "test", file = "test.csv")
-# test$data
-# test$write_table()
-# test$col_types
+
+# ,
+# message = NA_character_,
+# permission = "public",
+# owner = NA_character_,
+# group = NA_character_,
+# access = "774", #a convience value
+# setManMess = function(., message = .$message) { .$message <- message},
+# setGroup = function(., group = .$group) { .$group <- group},
+# setPermission = function(., permission = .$permission) {
+#   if(!is.element(permission, c("public","private"))){
+#     abort("{permission} is not a valid permission")
+#   }
+#   .$access <- switch (permission,
+#                       public = "774", #Anyone in group can modify
+#                       private = "744" #Only user can modify
+#   )
+#   .$permission <- permission
+# },
+# validManName = function(.) !is.na(.$name)&&str_length(.$name)>0,
+# validManPath = function(.) !is.na(.$path)&&dir.exists(.$path),
+# updateClass = function(.) {
+#   .$setManPath(.$path)
+# },
+# isValid = function(.){
+#   errors <- c()
+#   if(!.$validManName()){
+#     errors <- c(errors, glue("Data Manager name is not defined."))
+#   }
+#   if(is.na(.$path)){
+#     errors <- c(errors, glue("Data Manager path is not defined."))
+#   } else if(!dir.exists(.$path)) {
+#     rlang::warn(glue("{.$path} does not exist yet."))
+#   }
+#   if(length(errors)>0) {
+#     rlang::warn(glue_collapse(errors, sep = "\n"))
+#     .$setManMess(errors)
+#     return(FALSE)
+#   } else {
+#     .$setManMess(NULL)
+#     return(TRUE)
+#   }
 #
-# new_dataman <- DataManR$proto()
+# },
+# new = function(.,
+#                Tables = .$Tables,
+#                name = .$name,
+#                links = .$links,
+#                path = .$path) {
+#   tmp <- .$proto(Tables = Tables, name = name, links = links, path = path, owner = Sys.info()[["user"]], owner = Sys.info()[["user"]])
+#   tmp$isValid()
+#   class(tmp) <- c("DataManR",class(tmp))
+#   return(tmp)
+# }
+
+
+

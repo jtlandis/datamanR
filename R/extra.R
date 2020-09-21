@@ -1,7 +1,8 @@
-#' @import proto
+#' @import R6
 #' @import glue
 #' @import data.table
 #' @importFrom rlang abort warn
+#' @importFrom lubridate now
 #' @import stringr
 #' @import shiny
 
@@ -40,34 +41,12 @@ require_char <- function(value, object){
 #' @name full_path
 #' @description create the full path for a hypothetical directory/file
 full_path <- function(path) {
-  dotdot <- stringr::str_detect(path, "\\.\\.\\/?$")
+  slash <- if(.Platform$OS.type=="windows") "\\" else "/"
+  dotdot <- stringr::str_detect(path, "\\.\\.(\\/?$|\\\\?$)|\\.")
   dir_ <- ifelse(dotdot, path, dirname(path))
   bas_ <- ifelse(dotdot, "", basename(path))
-  return(paste(normalizePath(dir_),bas_, sep = ifelse(dotdot,"","/")))
+  return(paste(normalizePath(dir_),bas_, sep = ifelse(dotdot,"",slash)))
 }
-
-#' @export
-print.def <- function(x){
-  .df <- data.frame(col_names = x$col_names,
-                    col_types = x$col_types,
-                    row.names = NULL)
-  .df$keys <- ifelse(.df$col_names%in%x$keys, T, F)
-  cat("name: ",x$name,
-      "\npath: ", x$file,"\n")
-  data <- x$data
-  if(!is.null(data)) {
-    cat("nrow: ", nrow(data),"\n")
-  }
-  print(.df)
-}
-
-#' @export
-print.DataManR <- function(x){
-  cat("name: ", x$name,
-      "\npath: ", x$path,"\n")
-  x$Tables
-}
-
 
 validate_error <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
@@ -143,4 +122,35 @@ wrap_str <- function(str){
                 str_c("`",str,"`"),
                 str)
   return(str2)
+}
+
+
+parse_fun_list <- function(list) {
+  if(is.null(list)) return("NULL")
+  text <- lapply(list, function(x){
+    val <- str_extract(deparse(x), "(?<=(Primitive|UseMethod)\\(\")[:alnum:]+(?=\")")
+    val <- val[!is.na(val)]
+    return(val)
+  })
+  str_c("list(",str_c(names(text), "=",text, collapse = ", "),")", collapse = "")
+}
+
+melt_meta <- function(measure.vars, variable.name, value.name){
+
+  names(measure.vars) <- value.name
+  data <- unlist(measure.vars)
+  data <- data.frame(measure = data,
+                     value = str_extract(names(data), pattern = str_group(value.name)),
+                     variable = str_remove(names(data), pattern = str_group(value.name))) %>%
+    spread(key = value, value = measure)
+  colnames(data)[colnames(data)%in%"variable"] <- variable.name
+  return(as.data.table(data))
+}
+
+str_group <- function(str){
+  str_c("(", str_c(str, collapse = "|"),")")
+}
+
+print.dt_history <- function(x){
+  cat(x, sep = "\n")
 }
