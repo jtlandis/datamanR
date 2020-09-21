@@ -6,7 +6,7 @@
 \alias{DataManR}
 \title{TableDef Methods}
 \format{
-An object of class \code{proto} (inherits from \code{environment}) of length 17.
+An object of class \code{proto} (inherits from \code{environment}) of length 19.
 }
 \usage{
 DataManR
