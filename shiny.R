@@ -1,7 +1,10 @@
 library(shiny)
+library(data.table)
+library(stringr)
 library(datamanR)
 library(shinyFiles)
 library(shinydashboard)
+library(shinyBS)
 
 #.sF-dirInfo
 #.sF-dirWind
@@ -70,6 +73,10 @@ ui <- dashboardPage(
       tabItem(
         tabName = "datamanr_mod",
         fluidRow(box(modDataManRUI("modDataManR"), width = 12))
+      ),
+      tabItem(
+        tabName = "datatable_add",
+        fluidRow(box(addDefUI("add_table"), width = 12))
       )
     ), #tabItems end ----
     fluidRow(
@@ -108,11 +115,6 @@ server <- function(input, output, session){
 
   #csvfile <- csvFileServer("csv", FALSE)
 
-  output$manageR <- renderPrint({
-    mod$save()
-    rv$ManR
-  })
-
   observeEvent(mod$save(), {
     if(mod$update_dimg()=="Yes"){
       if(file.exists(rv$ManR$rds_file)){
@@ -123,6 +125,15 @@ server <- function(input, output, session){
     rv$ManR$path <- mod$mod_path()
     rv$ManR$save()
   })
+
+  output$manageR <- renderPrint({
+    mod$save()
+    rv$ManR
+  })
+
+  addDefServer("add_table")
+
+
 
 
 

@@ -270,7 +270,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  },
                                  read = function() {
                                    if(file.exists(self$path)){
-                                     data_table <- data.table::fread(file = self$file, header = T, colClasses = self$col_types)
+                                     data_table <- data.table::fread(file = self$path, header = T, colClasses = self$col_types)
                                    } else if(!any(is.na(self$col_names))&&!any(is.na(self$col_types))){
                                      warn(glue("file: {self$path} is not valid.\nloading empty data.table.\n"))
                                      data_table <- data.table::fread(c(paste0(self$col_names, collapse = ","),"\n"), colClasses = self$col_types)
