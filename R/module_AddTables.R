@@ -9,9 +9,14 @@ addDefUI <- function(id){
     tabsetPanel(
       tabPanel("Upload Local",
                uploadfileUI(ns("table_upload"))),
-      tabPanel("Read  Remote"),
-      tabPanel("Define New")
-    )
+      tabPanel("Read  Remote",
+               readremoteUI(ns("table_remote"))),
+      tabPanel("Define New",
+               definetablUI(ns("table_define")))
+    ),
+    hr(),
+    h3("Table Definition preview:"),
+    verbatimTextOutput(ns("preview"))
   )
 }
 
@@ -21,8 +26,37 @@ addDefServer <- function(id, roots = c(home = getwd())){
   moduleServer(
     id = id,
     function(input, output, session){
-
+      deftab <- reactiveValues(
+        data = NA_character_,
+        name = NA_character_,
+        path = NA_character_,
+        keys = NA_character_
+      )
       upload_def <- uploadfileServer(id = "table_upload", roots = roots)
+      remote_def <- readremoteServer(id = "table_remote", roots = roots)
+      define_def <- definetablServer(id = "table_define")
+
+      observe({
+        upload_def$set()
+        deftab$data <- upload_def$data()
+        deftab$name <- upload_def$name()
+        deftab$path <- upload_def$path()
+        deftab$keys <- upload_def$keys()
+      })
+
+      output$preview <- renderPrint({
+        cat("DataTableDefinitions:\n",
+            "  Name  : ", deftab$name,"\n",
+            "  Path  : ", deftab$path,"\n",
+            "  md5sum: ", deftab$md5sum,"\n",
+            "  keys  : ", str_c(deftab$keys, collapse =", "),"\n", sep = "")
+      })
+
+
+      return(list(data = reactive(deftab$data),
+                  name = reactive(deftab$name),
+                  path = reactive(deftab$path),
+                  keys = reactive(deftab$keys)))
 
     }
   )
@@ -37,8 +71,8 @@ uploadfileUI <- function(id){
     uiOutput(ns("moreUIOptions")),
     hr(),
     h4("Data Table Preview"),
-    fluidRow(DT::dataTableOutput(ns("preview_table")), style = "margin-left:10px;margin-right:10px;max-height:450px;overflow-y:scroll;")
-    ,
+    fluidRow(DT::dataTableOutput(ns("preview_table")),
+             style = "margin-left:10px;margin-right:10px;max-height:450px;overflow-y:scroll;"),
     hr(),
     h4("Data Table Definitions:"),
     fluidRow(
@@ -107,28 +141,36 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
         }
       })
 
-      def <- reactive({
-        input$sheet
+      nam <- reactive({
+        validate(
+          need(input$name, "Table Must be named!")
+        )
+        input$name
+      })
+
+      datatab <- reactive({
+        req(userFile())
         if(str_detect(userFile()$datapath, "\\.rds$")){
           upload <- readRDS(userFile()$datapath)
         } else if(str_detect(userFile()$datapath, "\\.xlsx?$")){
+          req(input$sheet, input$heading_xls)
           upload <- readxl::read_excel(userFile()$datapath, sheet = input$sheet, col_names = input$heading_xls)
         } else{
+          req(input$heading, input$quote, input$sep)
           upload <- fread(file = userFile()$datapath, header = input$heading, quote = input$quote, sep = input$sep )
         }
         if(inherits(upload, "data.frame")){
-          def_ <- TableDefinition$new(data = upload, userFile()$name)
-        } else if(inherits(upload, "TableDefinition")){
           def_ <- upload
+        } else if(inherits(upload, "TableDefinition")){
+          def_ <- copy(upload$data)
         }
         return(def_)
       })
 
 
       output$preview_table <- DT::renderDT({
-        def()
-        ellipse_tar <- unname(which(def()$col_types=="character"))
-        DT::datatable(def()$data, class = c("compact stripe cell-border nowrap hover"), filter = 'top',
+        ellipse_tar <- unname(which(colclasses(datatab())=="character"))
+        DT::datatable(datatab(), class = c("compact stripe cell-border nowrap hover"), filter = 'top',
                       extensions = list('Buttons' = NULL,
                                         'FixedColumns' = NULL),
                       options = list(scrollX = TRUE,
@@ -160,32 +202,61 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
 
       output$ui1 <- renderUI({
         ns <- session$ns
-        req(def())
         tagList(
           textInput(ns("name"),
                     "Name",
                     value = str_remove(userFile()$name,
                                        str_c("(_TableDef)?\\.",
                                              tools::file_ext(userFile()$name)))),
-          selectInput(ns("keys"), "Keys", choices = def()$col_names, multiple = T)
+          selectInput(ns("keys"), "Keys", choices = colnames(datatab()), multiple = T)
         )
       })
-      file <- reactive({
-        str_c(input$dir,input$name, ".csv")
-      })
-      def1 <- reactive({
-        d <- def1()
-        d$keys <- input$keys
-        d$name <- input$name
-        d$path <- file() #should be a path to a file.
-        return(d)
+
+      key <- reactive({
+        req(datatab())
+        input$keys
       })
 
-      return(def1)
+      file <- reactive({
+        str_c(dir(),nam(), ".csv")
+      })
+
+      return(list(data = datatab, name = nam, path = file, keys = key))
 
     }
   )
 }
 
+
+
+
+readremoteUI <- function(id){
+  ns <- NS(id)
+
+  tagList(
+    h4("Read Remote File:"),
+    fluidRow(
+      column(12,
+             shinyFilesButton(ns("files"),
+                            "Remote Table", "Select A File"
+             ), align = "center"))
+  )
+}
+
+
+readremoteServer <- function(id, roots = c(home = getwd())){
+  moduleServer(
+    id,
+    function(input, output, session){
+
+    }
+  )
+}
+
+
+
+definetablUI
+
+definetablServer
 
 

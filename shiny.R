@@ -5,6 +5,7 @@ library(datamanR)
 library(shinyFiles)
 library(shinydashboard)
 library(shinyBS)
+library(DT)
 
 #.sF-dirInfo
 #.sF-dirWind
@@ -47,7 +48,6 @@ ui <- dashboardPage(
     tags$head(
       tags$style(
         HTML('
-
              '
         )
       )
@@ -149,13 +149,3 @@ server <- function(input, output, session){
 
 shinyApp(ui, server)
 
-
-# uit <- fluidPage(
-#   loadDataManRUI("test")
-# )
-#
-# servert <- function(input, output, session){
-#   test1 <- loadDataManRServer("test")
-# }
-#
-# shinyApp(uit, servert)
