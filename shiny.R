@@ -34,6 +34,13 @@ library(DT)
 # overflow: auto;
 # }
 
+# spring:
+#   servlet:
+#   multipart:
+#   max-file-size: 200MB
+#   max-request-size: 200MB
+
+#options(shiny.maxRequestSize=100*1024^2)
 ui <- dashboardPage(
   dashboardHeader(title = "Data ManageR"),
   dashboardSidebar(
