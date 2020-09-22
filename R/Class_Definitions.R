@@ -300,7 +300,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    return(data_table)
                                  },
                                  save = function(file = self$rds_file){
-                                   saveRDS(object = self, file = paste0(dirname(file,"/", name)))
+                                   saveRDS(object = self, file = file)
                                  },
                                  mutate = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
                                    #browser()
