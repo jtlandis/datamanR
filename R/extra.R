@@ -18,14 +18,40 @@ colclasses <- function(data){
   return(data)
 }
 
+#' @name %betwen%
+#' @description an infix implementation of the common
+#' expression  x >= lower & x <= upper.
+#' @param a Numeric Vector input
+#' @param b Numeric Vector whose minimum is the left bound
+#'  and maximum is the right bound.
+#' @return vector of TRUE FALSE values
 #' @export
 "%betwn%" <- function(a, b){
-  between(a, min(b), max(b))
+  a >= min(b, na.rm = T) & a <= max(b, na.rm = T)
 }
 
+#' @name %match%
+#' @describeption an infix implementation of str_detect.
+#' @param a Character Vector input
+#' @param b A vector of strings to match against. b can be
+#'  a regular expression. If b contains multiple elements
+#'  then their values are collapsed into groups. e.i.
+#'  c("hello","world") becomes c("(hello|world)")
+#' @return vector of TRUE FALSE values
 #' @export
 "%match%" <- function(a, b){
   str_detect(a, str_group(b))
+}
+
+
+#' @name %replace%
+#' @description an infix implementation of str_replace_all.
+#' @param a Character Vector input
+#' @param b A named vector of replacements, e.i. c("pattern"="replacement")
+#' @return modified character vector
+#' @export
+"%replace%" <- function(a,b){
+  str_replace_all(a,b)
 }
 
 
@@ -52,12 +78,10 @@ require_char <- function(value, object){
 
 #' @name full_path
 #' @description create the full path for a hypothetical directory/file
+#' @export
 full_path <- function(path) {
-  slash <- if(.Platform$OS.type=="windows") "\\" else "/"
-  dotdot <- stringr::str_detect(path, "\\.\\.(\\/?$|\\\\?$)|\\.")
-  dir_ <- ifelse(dotdot, path, dirname(path))
-  bas_ <- ifelse(dotdot, "", basename(path))
-  return(paste(normalizePath(dir_),bas_, sep = ifelse(dotdot,"",slash)))
+  path <- as.character(fs::path_abs(path))
+  return(path)
 }
 
 validate_error <- function (..., errorClass = character(0)) {
