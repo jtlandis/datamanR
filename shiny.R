@@ -2,6 +2,13 @@ library(shiny)
 library(datamanR)
 library(shinyFiles)
 library(shinydashboard)
+library(data.table)
+library(stringr)
+library(datamanR)
+library(shinyFiles)
+library(shinydashboard)
+library(shinyBS)
+library(DT)
 
 #.sF-dirInfo
 #.sF-dirWind
@@ -44,16 +51,15 @@ ui <- dashboardPage(
     tags$head(
       tags$style(
         HTML('
-
              '
-          )
+        )
       )
     ),
     tabItems(
       tabItem(
         tabName = "homepage",
         fluidRow(h1("Welcome to Data ManageR!"))
-        ),
+      ),
       tabItem(
         tabName = "datamanr",
         h1("TBD")),
@@ -70,6 +76,10 @@ ui <- dashboardPage(
       tabItem(
         tabName = "datamanr_mod",
         fluidRow(box(modDataManRUI("modDataManR"), width = 12))
+      ),
+      tabItem(
+        tabName = "datatable_add",
+        fluidRow(box(addDefUI("add_table"), width = 12))
       )
     ), #tabItems end ----
     fluidRow(
@@ -79,17 +89,16 @@ ui <- dashboardPage(
           verbatimTextOutput("manageR"))
     )
   )
- )
+)
 
 
 
-server <- function(input, output, session){
+server <- function(input, output, session) {
 
 
 
   rv <- reactiveValues(
-    ManR = DataManR$new()
-  )
+    ManR = DataManR$new())
 
   create <- createDataManRServer("newDataManR", roots = c(home = "/home/datamanr"))
 
@@ -99,7 +108,6 @@ server <- function(input, output, session){
   })
 
   load <- loadDataManRServer("loadDataManR", roots = c(home = "/home/datamanr"))
-
   observeEvent(load$set(), {
     req(load$data())
     rv$ManR <- load$data()
@@ -107,9 +115,34 @@ server <- function(input, output, session){
 
   #csvfile <- csvFileServer("csv", FALSE)
 
+
   output$manageR <- renderPrint(rv$ManR)
 
   mod <- modDataManServer("modDataManR", roots = c(home = "/home/datamanr"), datamanR = reactive(rv$ManR))
+
+  observeEvent(mod$save(), {
+    if(mod$update_dimg()=="Yes"){
+      if(file.exists(rv$ManR$rds_file)){
+        file.remove(rv$ManR$rds_file)
+      }
+    }
+    rv$ManR$name <- mod$mod_name()
+    rv$ManR$path <- mod$mod_path()
+    rv$ManR$save()
+  })
+
+  output$manageR <- renderPrint({
+    mod$save()
+    rv$ManR
+  })
+
+  addDefServer("add_table")
+
+
+
+
+
+  mod <- modDataManServer("modDataManR", roots = c(home = getwd()), datamanR = reactive(rv$ManR))
 
   #output$test <- renderPrint(modTest)
 
@@ -122,12 +155,3 @@ server <- function(input, output, session){
 shinyApp(ui, server)
 
 
-# uit <- fluidPage(
-#   loadDataManRUI("test")
-# )
-#
-# servert <- function(input, output, session){
-#   test1 <- loadDataManRServer("test")
-# }
-#
-# shinyApp(uit, servert)
