@@ -18,6 +18,18 @@ colclasses <- function(data){
   return(data)
 }
 
+#' @export
+"%betwn%" <- function(a, b){
+  between(a, min(b), max(b))
+}
+
+#' @export
+"%match%" <- function(a, b){
+  str_detect(a, str_group(b))
+}
+
+
+
 "%||%" <- function(a,b){
   if(is.null(a)) b else a
 }
@@ -154,3 +166,5 @@ str_group <- function(str){
 print.dt_history <- function(x){
   cat(x, sep = "\n")
 }
+
+

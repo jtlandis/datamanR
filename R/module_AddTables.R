@@ -31,10 +31,33 @@ addDefServer <- function(id, roots = c(home = getwd())){
 uploadfileUI <- function(id){
   ns <- NS(id)
   tagList(
+    h2("Upload Options:"),
+    br(),
     fileInput(ns("file"), "Upload File"),
-    shinyDirButton(ns("dir"), "Directory", "Select A Directory"),
-    uiOutput(ns("ui1")),
-    uiOutput(ns("ui2"))
+    uiOutput(ns("moreUIOptions")),
+    hr(),
+    h4("Data Table Preview"),
+    fluidRow(DT::dataTableOutput(ns("preview_table")), style = "margin-left:10px;margin-right:10px;max-height:450px;overflow-y:scroll;")
+    ,
+    hr(),
+    h4("Data Table Definitions:"),
+    fluidRow(
+      column(6,
+             uiOutput(ns("ui1"))
+             ),
+      column(6,
+             fluidRow(
+               column(12,
+                      shinyDirButton(ns("directory"),
+                                     "Table Directory", "Select A Directory"
+                      ), align = "center")),
+             fluidRow(
+               column(12,
+                      htmlOutput(ns("dirout"))))
+             )
+    )
+
+
   )
 }
 
@@ -48,21 +71,38 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
         input$file
       })
 
-      output$ui2 <- renderUI({
+      shinyDirChoose(input, "directory", roots = roots)
+      dir <- reactive({
+        validate(
+          need(input$directory, "Please select a Directory for the Table to be saved.")
+        )
+        parseDirPath(roots = roots, selection = input$directory)
+      })
+      output$dirout <- renderText(str_c(p(strong(dir()), style = "word-wrap: break-word;")))
+      output$moreUIOptions <- renderUI({
         ns <- session$ns
         req(userFile())
         if(str_detect(userFile()$datapath, "\\.xlsx?$")){
           tagList(
-            checkboxInput(ns("heading_xls"), "Has heading", value = TRUE),
-            selectInput(ns("sheet"),
-                        label = "Select Sheet",
-                        choices = readxl::excel_sheets(userFile()$datapath))
+            fluidRow(
+              column(6,
+                     checkboxInput(ns("heading_xls"), "Has heading", value = TRUE)),
+              column(6,
+                     selectInput(ns("sheet"),
+                                 label = "Select Sheet",
+                                 choices = readxl::excel_sheets(userFile()$datapath)))
+            )
           )
         } else {
           tagList(
-            checkboxInput(ns("heading"), "Has heading", value = TRUE),
-            selectInput(ns("quote"), "Quote", c("None" = "", "Double quote" = "\"", "Single quote" = "'")),
-            selectInput(ns("sep"), "Delimeter", c("csv"=",", "tab"="\t", "None"=""))
+            fluidRow(
+              column(4,
+                     checkboxInput(ns("heading"), "Has heading", value = TRUE)),
+              column(4,
+                     selectInput(ns("quote"), "Quote", c("None" = "", "Double quote" = "\"", "Single quote" = "'"))),
+              column(4,
+                     selectInput(ns("sep"), "Delimeter", c("csv"=",", "tab"="\t", "None"="")))
+            )
           )
         }
       })
@@ -84,7 +124,39 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
         return(def_)
       })
 
-      shinyDirChoose(input, "dir", roots = roots)
+
+      output$preview_table <- DT::renderDT({
+        def()
+        ellipse_tar <- unname(which(def()$col_types=="character"))
+        DT::datatable(def()$data, class = c("compact stripe cell-border nowrap hover"), filter = 'top',
+                      extensions = list('Buttons' = NULL,
+                                        'FixedColumns' = NULL),
+                      options = list(scrollX = TRUE,
+                                     dom = 'Bfrltip',
+                                     lengthMenu = list(c(10, 25, 50, -1), c('10', '25', '50', 'All')),
+                                     fixedColumns = TRUE,
+                                     buttons = list(I('colvis'),
+                                                    list(extend = c('collection'),
+                                                         buttons = list(list(extend = 'csv',
+                                                                             filename = paste0(Sys.Date(),"_Submitted_Export")),
+                                                                        list(extend = 'excel',
+                                                                             filename = paste0(Sys.Date(),"_Submitted_Export")),
+                                                                        list(extend = 'pdf',
+                                                                             filename = paste0(Sys.Date(),"_Submitted_Export"))),
+                                                         text = 'Download')
+                                     ),
+                                     columnDefs = list(
+                                       list(
+                                         targets = ellipse_tar,
+                                         render = JS(
+                                           "function(data, type, row, meta) {",
+                                           "return type === 'display' && data.length > 10 ?",
+                                           "'<span title=\"' + data + '\">' + data.substr(0, 8) + '...</span>' : data;",
+                                           "}")
+                                       )
+                                     )
+                      ))
+      })
 
       output$ui1 <- renderUI({
         ns <- session$ns
