@@ -144,10 +144,7 @@ a Data Manager.}
 \if{latex}{\out{\hypertarget{method-save}{}}}
 \subsection{Method \code{save()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TableDefinition$save(
-  location = dirname(self$path),
-  name = paste0(self$name, "_tableDef.rds")
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TableDefinition$save(file = self$rds_file)}\if{html}{\out{</div>}}
 }
 
 }

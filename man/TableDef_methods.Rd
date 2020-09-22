@@ -95,13 +95,16 @@ Methods of TableDef
 \if{latex}{\out{\hypertarget{method-save}{}}}
 \subsection{Method \code{save()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DataManR$save(
-  location = dirname(self$path),
-  name = str_c(self$name, "_DataManR.rds"),
-  saveData = F
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DataManR$save(file = self$rds_file, saveData = F)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{file}}{file to write. Defaults to file field.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-copy"></a>}}
