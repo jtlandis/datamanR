@@ -2,6 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-shiny.R
 man/*.Rd
 NAMESPACE

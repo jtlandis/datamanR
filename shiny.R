@@ -1,4 +1,7 @@
 library(shiny)
+library(datamanR)
+library(shinyFiles)
+library(shinydashboard)
 library(data.table)
 library(stringr)
 library(datamanR)
@@ -31,6 +34,13 @@ library(DT)
 # overflow: auto;
 # }
 
+# spring:
+#   servlet:
+#   multipart:
+#   max-file-size: 200MB
+#   max-request-size: 200MB
+
+#options(shiny.maxRequestSize=100*1024^2)
 ui <- dashboardPage(
   dashboardHeader(title = "Data ManageR"),
   dashboardSidebar(
@@ -90,30 +100,32 @@ ui <- dashboardPage(
 
 
 
-server <- function(input, output, session){
+server <- function(input, output, session) {
 
 
 
   rv <- reactiveValues(
-    ManR = DataManR$new()
+    ManR = DataManR$new())
 
-  )
-
-  create <- createDataManRServer("newDataManR", roots = c(home = getwd()))
+  create <- createDataManRServer("newDataManR", roots = c(home = "/home/datamanr"))
 
   observeEvent(create$set(), {
     req(create$data())
     rv$ManR <- create$data()
   })
 
-  load <- loadDataManRServer("loadDataManR", roots = c(home = getwd()))
-
+  load <- loadDataManRServer("loadDataManR", roots = c(home = "/home/datamanr"))
   observeEvent(load$set(), {
     req(load$data())
     rv$ManR <- load$data()
   })
 
   #csvfile <- csvFileServer("csv", FALSE)
+
+
+  output$manageR <- renderPrint(rv$ManR)
+
+  mod <- modDataManServer("modDataManR", roots = c(home = "/home/datamanr"), datamanR = reactive(rv$ManR))
 
   observeEvent(mod$save(), {
     if(mod$update_dimg()=="Yes"){
@@ -148,4 +160,5 @@ server <- function(input, output, session){
 
 
 shinyApp(ui, server)
+
 

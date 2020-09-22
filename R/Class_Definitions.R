@@ -87,7 +87,7 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                               push_history = function(value = "", field = "", verb = "changed", collapse = ", ", custom = NULL){
                                 entry <- custom %||% str_c(field, verb, "to:", str_c(value, collapse = collapse), sep = " ")
                                 private$.history <- c(private$.history, entry)
-                                private$.time <- c(private$.time, as.character(now()))
+                                private$.time <- c(private$.time, as.character(Sys.time()))
                                 invisible(self)
                               }
                             )
@@ -138,6 +138,23 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  .md5sum = NA_character_
                                ),
                                active = list(
+                                 path = function(value){
+                                   if(missing(value)){
+                                     private$.path
+                                   } else {
+                                     require_scalar_char(value, "`$path`")
+                                     value <- value %na% full_path(value)
+                                     validate_error(
+                                       need2(!fs::is_dir(value), "`$path` should not point to a directory for class 'TableDefinition'"))
+                                     if(!identical(private$.path, value)){
+                                       validate_warn(
+                                         need2(file.exists(value), glue("`$path`: {value} does not exist yet!")))
+                                       private$.path <- value
+                                       self$push_history(value, field = "`$path`")
+                                     }
+                                     self
+                                   }
+                                 },
                                  col_names = function(value){
                                    if(missing(value)){
                                      private$.col_names
@@ -249,7 +266,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      self$col_types <- colclasses(self$data)
                                    }
                                    if(file.exists(self$path)){
-                                     private$md5sum <- tools::md5sum(self$path)
+                                     private$.md5sum <- tools::md5sum(self$path)
                                    } else {
                                      warn("`$path` does not exist. Please write table to update md5sum.")
                                    }
@@ -262,7 +279,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    file <- full_path(file)
                                    data.table::fwrite(x = data, file = file, sep = sep, append = append)
                                    .md5sum<- tools::md5sum(files = file)
-                                   if(!identical(private$md5sum, .md5sum)){
+                                   if(!identical(self$md5sum, .md5sum)){
                                      private$.md5sum <- .md5sum
                                      self$push_history(value = .md5sum, field = "`$md5sum`")
                                    }
@@ -283,7 +300,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    return(data_table)
                                  },
                                  save = function(file = self$rds_file){
-                                   saveRDS(object = self, file = paste0(location,"/", name))
+                                   saveRDS(object = self, file = file)
                                  },
                                  mutate = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
                                    #browser()
