@@ -46,6 +46,14 @@ addDefServer <- function(id, roots = c(home = getwd())){
         deftab$keys <- upload_def$keys()
       })
 
+      observe({
+        remote_def$set()
+        deftab$data <- remote_def$data()
+        deftab$name <- remote_def$name()
+        deftab$path <- remote_def$path()
+        deftab$keys <- remote_def$keys()
+      })
+
       output$preview <- renderPrint({
         cat("DataTableDefinitions:\n",
             "  Name  : ", deftab$name,"\n",
@@ -253,7 +261,7 @@ readremoteUI <- function(id){
     fluidRow(
       column(12,
              shinyFilesButton(ns("file"),
-                            "Remote Table", "Select A File", F
+                            "Remote Table", "Select A File", multiple =  F
              ), align = "center")),
 
     uiOutput(ns("moreUIOptions")),
@@ -286,15 +294,20 @@ readremoteUI <- function(id){
 }
 
 
-
+#' @export
 readremoteServer <- function(id, roots = c(home = getwd())){
   moduleServer(
     id,
     function(input, output, session){
 
       userFile <- reactive({
-        validate(need(input$file, message = FALSE))
+        req(input$file)
+        validate(need(!is.null(input$file), FALSE),
+                 need(length(input$file)>0, FALSE),
+                 need(input$file, message = FALSE))
+        print(input$file)
         parseFilePaths(roots = roots,input$file)
+
       })
 
       shinyFileChoose(input, "file", roots = roots)
@@ -344,7 +357,9 @@ readremoteServer <- function(id, roots = c(home = getwd())){
       })
 
       datatab <- reactive({
-        req(userFile())
+        cat("attempting to access data")
+        validate(need("datapath"%in%names(userFile()), "File Is not Loaded!"))
+        validate(need(length(userFile()$datapath)>0), "File Is not Loaded!")
         if(str_detect(userFile()$datapath, "\\.rds$")){
           upload <- readRDS(userFile()$datapath)
         } else if(str_detect(userFile()$datapath, "\\.xlsx?$")){
@@ -360,6 +375,8 @@ readremoteServer <- function(id, roots = c(home = getwd())){
           def_ <- upload
         } else if(inherits(upload, "TableDefinition")){
           def_ <- copy(upload$data)
+        } else {
+          validate(need("Please Select a _TableDef.rds file or a regular data file (.csv, .tsv, etc)"))
         }
         return(def_)
       })
