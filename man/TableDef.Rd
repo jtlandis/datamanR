@@ -10,6 +10,9 @@ of a Data Table. This object is of class "def" including class
 "proto" and "environment". Use this class to define the constraints
 and characteristics of a Data Table.
 }
+\details{
+Methods to set each field
+}
 \section{Feilds}{
 
 
