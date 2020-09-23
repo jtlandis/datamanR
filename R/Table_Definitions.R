@@ -246,13 +246,13 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    saveRDS(object = self, file = file)
                                  },
                                  #' @description
-                                 #'  similar to \link[dplyr]{dplyr::mutate} this function will
+                                 #'  similar to \link[dplyr]{mutate} this function will
                                  #'  modify `$data` field in place using \link[data.table]{data.table}
-                                 #'  \link[data.table]{`:=`}.
+                                 #'  \link[data.table]{:=}.
                                  #' @param i expression evaluating to logical vectory or row indexs.
                                  #'  This informs which rows are included in the mutation.
                                  #' @param j named list of expressions to enact. This parameter is
-                                 #'  most similar to the \code{\dots} argument in \link[dplyr]{dplyr::mutate}
+                                 #'  most similar to the \code{\dots} argument in \link[dplyr]{mutate}
                                  #'  except a list is expected. This which columns are made/mutated and how.
                                  #'  j is the only argument that is required, otherwise if j is missing or
                                  #'  NULL then this method returns self with no changes.
@@ -298,7 +298,7 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    invisible(self)
                                  },
                                  #' @description
-                                 #'  similar to \link[dplyr]{dplyr::filter} this function will
+                                 #'  similar to \link[dplyr]{filter} this function will
                                  #'  modify `$data` field in place using \link[data.table]{data.table}.
                                  #' @param i expression evaluating to logical vectory or row indexs.
                                  #'  This informs which rows are included in the mutation.
@@ -320,17 +320,17 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    invisible(self)
                                  },
                                  #' @description
-                                 #'  similar to \link[dplyr]{dplyr::summarise} this function will
+                                 #'  similar to \link[dplyr]{summarise} this function will
                                  #'  modify `$data` field in place using \link[data.table]{data.table}
                                  #'  logic. This has a few key differences. This does not require
                                  #'  that expressions passed return a value of length 1. Evaluation
-                                 #'  does NOT happen in place with \link[data.table]{`:=`}, thus
+                                 #'  does NOT happen in place with \link[data.table]{:=}, thus
                                  #'  columns are subsetted in the output.
                                  #'
                                  #' @param i expression evaluating to logical vectory or row indexs.
                                  #'  This informs which rows are included in the mutation.
                                  #' @param j named list of expressions to enact. This parameter is
-                                 #'  most similar to the \code{\dots} argument in \link[dplyr]{dplyr::summarise}
+                                 #'  most similar to the \code{\dots} argument in \link[dplyr]{summarise}
                                  #'  except a list is expected. Describes which columns are made/summarised and how.
                                  #'  j is the only argument that is required, otherwise if j is missing or
                                  #'  NULL then this method returns self with no changes.
@@ -367,7 +367,7 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    invisible(self)
                                  },
                                  #' @description
-                                 #'  wrapper function for {\link[data.table]{data.table::dcast}.
+                                 #'  wrapper function for {\link[data.table]{dcast}.
                                  #' @param cols character vector specifying which columns whose values will become new columns.
                                  #' @param value.var character vector specifying which values will be used for new entries
                                  #' @param fun.aggregate aggregate function to be used if multiple values exist.
@@ -392,8 +392,7 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    self$push_history(custom = hist)
                                    invisible(self)
                                  },
-                                 #' @description
-                                 #'  wrapper function for \link[data.table]{data.table::melt}.
+                                 #' @description wrapper function for \link[data.table]{melt}.
                                  #' @param measure.vars which columns should be melted into
                                  #'  a new column. This argument may be a list if you wish
                                  #'  to condense into multiple columns. For convenience/clarity
