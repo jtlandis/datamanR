@@ -1,15 +1,16 @@
-#' R6 Class used as the base class for the datamanR package.
-#'  this class will contain fields and methods to be inherited
+#'
+#'
+#' @title R6 Class used as the base class for the datamanR package.
+#'
+#' @description
+#'  This class will contain fields and methods to be inherited
 #'  to the classes 'TableDefinition' and 'DataManR'. Class
 #'  'BaseDMR' is not intended to be instantiated directly.
 #'
-#'  active fields are in \strong{bold} while methods are in
-#'  \emph{italics}.
-#'
 BaseDMR <- R6::R6Class(classname = "BaseDMR",
                        active = list(
-                         #' @field \strong{name} Scalar character that specifies
-                         #'  the name assigned to class instance.
+                         #' @field name Scalar character
+                         #' that specifies the name assigned to class instance.
                          name = function(value) {
                            if(missing(value)){
                              private$.name
@@ -22,8 +23,8 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                              self
                            }
                          },
-                         #' @field \strong{path} Scalar character that specifies
-                         #'  the path this object is to be saved.
+                         #' @field path Scalar character that specifies
+                         #' the path this object is to be saved.
                          path = function(value) {
                            if(missing(value)){
                              private$.path
@@ -59,7 +60,14 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                            self$path <- path
                          },
                          #' @description
-                         #'  Call custom validate method. validate
+                         #'  Call custom validate method. This method
+                         #'  should always return TRUE unless an
+                         #'  error is encountered.
+                         #'  \seealso{
+                         #'     \code{\link{validate_error}}
+                         #'     \code{\link{validate_warn}}
+                         #'     \code{\link{validate_message}}
+                         #'  }
                          validate = function(){
                            validate_warn(
                              need2(file.exists(self$path), glue("file: {self$path} does not exist yet!"))
@@ -71,17 +79,32 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                            )
                            TRUE
                          },
+                         #' @description
+                         #'  Calls validate method within \code{\link{tryCatch}}
+                         #'  expression. If an error is encountered, returns FALSE
+                         #'  otherwise return TRUE from validate method.
                          isValid = function(){
                            tryCatch( expr = self$validate(),
                                      error = function(err) {
                                        message(glue("{err$message}\n")) ; F }
                            )
                          },
+                         #' @description
+                         #'  print information
                          print = function(){
                            cat("DMRStructure:\n",
                                "    Name: ", self$name,"\n",
                                "    Path: ", self$path,"\n", sep = "")
                          },
+                         #' @description
+                         #'  show history of object
+                         #' @param n number of entries to print
+                         #' @param fun character value of either
+                         #'  "tail" or "head" to print the last
+                         #'  n or top n entries respectively.
+                         #' @param time logical value indicating
+                         #'  if \code{\link{Sys.time}} should be
+                         #'  printed along with history logs.
                          history = function(n = 5, fun = "tail", time = F){
                            if(is.null(n)){
                              n <- length(private$.history)
@@ -96,11 +119,23 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                            }
                            return(structure(.hist, class = "dt_history"))
                          },
-                         push_history = function(value = "", field = "", verb = "changed", collapse = ", ", custom = NULL){
-                           entry <- custom %||% str_c(field, verb, "to:", str_c(value, collapse = collapse), sep = " ")
+                         #' @description
+                         #'  add entry to history log. params value
+                         #'  field and verb are short hand entries.
+                         #'  messages are logged as:
+                         #'  "`field` `verb` `value`"
+                         #' @param value value to which field has changed
+                         #' @param field field that has changed
+                         #' @param verb verb that specifies what was done
+                         #' @param collapse how to collapse value if length >1
+                         #' @param custom write a custom message to history.
+                         push_history = function(value = "", field = "", verb = "changed to:", collapse = ", ", custom = NULL){
+                           entry <- custom %||% str_c(field, verb, str_c(value, collapse = collapse), sep = " ")
                            private$.history <- c(private$.history, entry)
                            private$.time <- c(private$.time, as.character(Sys.time()))
                            invisible(self)
                          }
                        )
 )
+
+
