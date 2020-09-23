@@ -1,4 +1,4 @@
-#' R6 Class to represent Data Table Information
+#' @title R6 Class to represent Data Table Information
 #'
 #' @description
 #' Container to hold methods and useful information about a
@@ -14,7 +14,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  .md5sum = NA_character_
                                ),
                                active = list(
-                                 #' @field Scalar character that specifies
+                                 #' @field path Scalar character that specifies
                                  #'  a local file. This file is expected to
                                  #'  contain the data. Relative paths may
                                  #'  be assigned but will be convereted to
@@ -36,7 +36,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      self
                                    }
                                  },
-                                 #' @field holds the column names of
+                                 #' @field col_names holds the column names of
                                  #' \code{self$data}
                                  col_names = function(value){
                                    if(missing(value)){
@@ -53,7 +53,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      self
                                    }
                                  },
-                                 #' @field holds the column classes of
+                                 #' @field col_types holds the column classes of
                                  #' \code{self$data}
                                  col_types = function(value){
                                    if(missing(value)){
@@ -67,7 +67,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      self
                                    }
                                  },
-                                 #' @field sets which columns are keys. A group
+                                 #' @field keys sets which columns are keys. A group
                                  #'  of keys should uniquely identify a row.
                                  #'  keys are also helpful for identifying
                                  #'  which columns may merge well with other
@@ -84,7 +84,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      self
                                    }
                                  },
-                                 #' @field contains the md5sum of the data table
+                                 #' @field md5sum contains the md5sum of the data table
                                  #' saved on disk. md5sum field is only updated
                                  #' when the write method or update method is called.
                                  md5sum = function(value){
@@ -94,7 +94,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      abort("`$md5sum` is read only. Value depends on disk image of `$data`.")
                                    }
                                  },
-                                 #' @field contains the expected rds file. This
+                                 #' @field rds_file contains the expected rds file. This
                                  #' is expected to save in the same directory as
                                  #' `$path` but will use `$name`_TableDef.rds
                                  rds_file = function(value) {
@@ -106,7 +106,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  }
                                ),
                                public = list(
-                                 #' @field contains the data.table class.
+                                 #' @field data contains the data.table class.
                                  data = NULL,
                                  #' @description
                                  #'  TableDefinition Class constructor
