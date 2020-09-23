@@ -72,6 +72,7 @@ addDefServer <- function(id, roots = c(home = getwd())){
   )
 }
 
+#' @export
 uploadfileUI <- function(id){
   ns <- NS(id)
   tagList(
@@ -109,6 +110,7 @@ uploadfileUI <- function(id){
   )
 }
 
+#' @export
 uploadfileServer <- function(id, roots = c(home = getwd())){
   moduleServer(
     id,
@@ -145,6 +147,7 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
           tagList(
             fluidRow(
               column(4,
+                     checkboxInput(ns("manual"), "Specify File Parameters?", value = FALSE),
                      checkboxInput(ns("heading"), "Has heading", value = TRUE)),
               column(4,
                      selectInput(ns("quote"), "Quote", c("None" = "", "Double quote" = "\"", "Single quote" = "'"), selected = c("None"=""))),
@@ -170,10 +173,14 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
           req(input$sheet)
           upload <- readxl::read_excel(userFile()$datapath, sheet = input$sheet, col_names = input$heading_xls)
         } else{
-          validate(
-            need(is.logical(input$heading), FALSE)
-          )
-          upload <- fread(file = userFile()$datapath, header = input$heading, quote = input$quote, sep = input$sep )
+          validate(need(is.logical(input$manual), FALSE))
+          if(input$manual){
+            validate(need(is.logical(input$heading), FALSE))
+            upload <- tryCatch(fread(file = userFile()$datapath, header = input$heading, quote = input$quote, sep = input$sep ), error = function(e){validate(e$message)})
+          } else {
+            upload <- tryCatch(fread(file = userFile()$datapath), error = function(e){validate(e$message)})
+          }
+
         }
         if(inherits(upload, "data.frame")){
           def_ <- upload
@@ -235,7 +242,7 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
       })
 
       file <- reactive({
-        str_c(dir(),nam(), ".csv")
+        str_c(dir(),"/", nam(), ".csv")
       })
 
 
@@ -252,7 +259,7 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
 
 
 
-
+#' @export
 readremoteUI <- function(id){
   ns <- NS(id)
 
@@ -339,6 +346,7 @@ readremoteServer <- function(id, roots = c(home = getwd())){
           tagList(
             fluidRow(
               column(4,
+                     checkboxInput(ns("manual"), "Specify File Parameters?", value = FALSE),
                      checkboxInput(ns("heading"), "Has heading", value = TRUE)),
               column(4,
                      selectInput(ns("quote"), "Quote", c("None" = "", "Double quote" = "\"", "Single quote" = "'"), selected = c("None"=""))),
@@ -357,19 +365,22 @@ readremoteServer <- function(id, roots = c(home = getwd())){
       })
 
       datatab <- reactive({
-        cat("attempting to access data")
         validate(need("datapath"%in%names(userFile()), "File Is not Loaded!"))
-        validate(need(length(userFile()$datapath)>0), "File Is not Loaded!")
+        validate(need(length(userFile()$datapath)>0, "File Is not Loaded!"))
+        validate(need(fs::file_exists(userFile()$datapath), "File is not Loaded"))
         if(str_detect(userFile()$datapath, "\\.rds$")){
           upload <- readRDS(userFile()$datapath)
         } else if(str_detect(userFile()$datapath, "\\.xlsx?$")){
           req(input$sheet)
           upload <- readxl::read_excel(userFile()$datapath, sheet = input$sheet, col_names = input$heading_xls)
         } else{
-          validate(
-            need(is.logical(input$heading), FALSE)
-          )
-          upload <- fread(file = userFile()$datapath, header = input$heading, quote = input$quote, sep = input$sep )
+          validate(need(is.logical(input$manual), FALSE))
+          if(input$manual){
+            validate(need(is.logical(input$heading), FALSE))
+            upload <- tryCatch(fread(file = userFile()$datapath, header = input$heading, quote = input$quote, sep = input$sep ), error = function(e){validate(e$message)})
+          } else {
+            upload <- tryCatch(fread(file = userFile()$datapath), error = function(e){validate(e$message)})
+          }
         }
         if(inherits(upload, "data.frame")){
           def_ <- upload
@@ -433,7 +444,7 @@ readremoteServer <- function(id, roots = c(home = getwd())){
       })
 
       file <- reactive({
-        str_c(dir(),nam(), ".csv")
+        str_c(dir(),"/", nam(), ".csv")
       })
 
 
