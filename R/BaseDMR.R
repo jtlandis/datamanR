@@ -63,10 +63,10 @@ BaseDMR <- R6::R6Class(classname = "BaseDMR",
                          #'  Call custom validate method. This method
                          #'  should always return TRUE unless an
                          #'  error is encountered.
-                         #'  \seealso{
-                         #'     \code{\link{validate_error}}
-                         #'     \code{\link{validate_warn}}
-                         #'     \code{\link{validate_message}}
+                         #'  \itemize{
+                         #'     \item{\code{\link{validate_error}}}
+                         #'     \item{\code{\link{validate_warn}}}
+                         #'     \item{\code{\link{validate_message}}}
                          #'  }
                          validate = function(){
                            validate_warn(

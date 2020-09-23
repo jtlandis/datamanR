@@ -18,6 +18,7 @@ colclasses <- function(data){
   return(data)
 }
 
+#' @title Values Between operator
 #' @name %betwen%
 #' @description an infix implementation of the common
 #' expression  x >= lower & x <= upper.
@@ -30,8 +31,9 @@ colclasses <- function(data){
   a >= min(b, na.rm = T) & a <= max(b, na.rm = T)
 }
 
+#' @title Values Match operator
 #' @name %match%
-#' @describeption an infix implementation of str_detect.
+#' @description an infix implementation of str_detect.
 #' @param a Character Vector input
 #' @param b A vector of strings to match against. b can be
 #'  a regular expression. If b contains multiple elements
@@ -43,7 +45,7 @@ colclasses <- function(data){
   str_detect(a, str_group(b))
 }
 
-
+#' @title Values replace all operator
 #' @name %replace%
 #' @description an infix implementation of str_replace_all.
 #' @param a Character Vector input
@@ -76,6 +78,7 @@ require_char <- function(value, object){
   )
 }
 
+#' @title Absolute File System Path
 #' @name full_path
 #' @description create the full path for a hypothetical directory/file
 #' @export
@@ -84,6 +87,11 @@ full_path <- function(path) {
   return(path)
 }
 
+#' @title Validation tests
+#' @description set of functions that can help condense if statements
+#'
+#' @describeIn validate_ similar to \link[shiny]{validate} except
+#'  this will throw an error message for each failed test.
 #' @export
 validate_error <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
@@ -102,6 +110,9 @@ validate_error <- function (..., errorClass = character(0)) {
   stop(paste(results, collapse = "\n"), call. = F)
 }
 
+
+#' @describeIn validate_ similar to \link[shiny]{validate} except
+#'  this will throw a warning message for each failed test.
 #' @export
 validate_warn <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
@@ -120,6 +131,10 @@ validate_warn <- function (..., errorClass = character(0)) {
   warning(paste(results, collapse = "\n"), call. = F)
 }
 
+
+
+#' @describeIn validate_ similar to \link[shiny]{validate} except
+#'  this will throw a message for each failed test.
 #' @export
 validate_message <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
@@ -138,6 +153,12 @@ validate_message <- function (..., errorClass = character(0)) {
   message(paste(results, collapse = "\n"))
 }
 
+
+
+#' @describeIn validate_ similar to \link[shiny]{need} except
+#'  this does not check with \link[shiny]{isTruthy}. This checks
+#'  if the expression is TRUE or FALSE. If the expression is
+#'  not TRUE, then the message is returned to validate_
 #' @export
 need2 <- function (expr, message) {
   force(message)
