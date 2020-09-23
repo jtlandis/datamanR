@@ -84,6 +84,7 @@ full_path <- function(path) {
   return(path)
 }
 
+#' @export
 validate_error <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
     if (is.null(x))
@@ -101,6 +102,7 @@ validate_error <- function (..., errorClass = character(0)) {
   stop(paste(results, collapse = "\n"), call. = F)
 }
 
+#' @export
 validate_warn <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
     if (is.null(x))
@@ -118,6 +120,7 @@ validate_warn <- function (..., errorClass = character(0)) {
   warning(paste(results, collapse = "\n"), call. = F)
 }
 
+#' @export
 validate_message <- function (..., errorClass = character(0)) {
   results <- sapply(list(...), function(x) {
     if (is.null(x))
@@ -132,9 +135,10 @@ validate_message <- function (..., errorClass = character(0)) {
   if (length(results) == 0)
     return(invisible())
   results <- results[nzchar(results)]
-  warning(paste(results, collapse = "\n"), call. = F)
+  message(paste(results, collapse = "\n"))
 }
 
+#' @export
 need2 <- function (expr, message) {
   force(message)
   if (!check_expr(expr))
