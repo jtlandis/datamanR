@@ -172,59 +172,6 @@ load_DataManR <- function(file, force_load_data = F){
 }
 
 
-# ,
-# message = NA_character_,
-# permission = "public",
-# owner = NA_character_,
-# group = NA_character_,
-# access = "774", #a convience value
-# setManMess = function(., message = .$message) { .$message <- message},
-# setGroup = function(., group = .$group) { .$group <- group},
-# setPermission = function(., permission = .$permission) {
-#   if(!is.element(permission, c("public","private"))){
-#     abort("{permission} is not a valid permission")
-#   }
-#   .$access <- switch (permission,
-#                       public = "774", #Anyone in group can modify
-#                       private = "744" #Only user can modify
-#   )
-#   .$permission <- permission
-# },
-# validManName = function(.) !is.na(.$name)&&str_length(.$name)>0,
-# validManPath = function(.) !is.na(.$path)&&dir.exists(.$path),
-# updateClass = function(.) {
-#   .$setManPath(.$path)
-# },
-# isValid = function(.){
-#   errors <- c()
-#   if(!.$validManName()){
-#     errors <- c(errors, glue("Data Manager name is not defined."))
-#   }
-#   if(is.na(.$path)){
-#     errors <- c(errors, glue("Data Manager path is not defined."))
-#   } else if(!dir.exists(.$path)) {
-#     rlang::warn(glue("{.$path} does not exist yet."))
-#   }
-#   if(length(errors)>0) {
-#     rlang::warn(glue_collapse(errors, sep = "\n"))
-#     .$setManMess(errors)
-#     return(FALSE)
-#   } else {
-#     .$setManMess(NULL)
-#     return(TRUE)
-#   }
-#
-# },
-# new = function(.,
-#                Tables = .$Tables,
-#                name = .$name,
-#                links = .$links,
-#                path = .$path) {
-#   tmp <- .$proto(Tables = Tables, name = name, links = links, path = path, owner = Sys.info()[["user"]], owner = Sys.info()[["user"]])
-#   tmp$isValid()
-#   class(tmp) <- c("DataManR",class(tmp))
-#   return(tmp)
-# }
 
 
 
