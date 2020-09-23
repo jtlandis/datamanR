@@ -90,6 +90,10 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                  #' @field md5sum contains the md5sum of the data table
                                  #' saved on disk. md5sum field is only updated
                                  #' when the write method or update method is called.
+                                 #' It is good practice to check that the md5sum field
+                                 #' matches the current image's md5sum before writing.
+                                 #' If they do not match then that implies the disk image
+                                 #' is different than what was originally loaded to memory.
                                  md5sum = function(value){
                                    if(missing(value)){
                                      private$.md5sum
@@ -133,6 +137,8 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    self$keys <- keys
                                    self$update()
                                  },
+                                 #' @description
+                                 #'  print quick information about the TInfo Object
                                  print = function(){
                                    cat("DataTInfos:\n",
                                        "  Name  : ", self$name,"\n",
@@ -144,6 +150,8 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                      print(x = head(self$data))
                                    }
                                  },
+                                 #' @description
+                                 #'  overrides \code{\link{BaseDMR$validate}} to run more specific checks.
                                  validate = function(){
                                    validate_warn(
                                      need2(file.exists(self$path), glue("file: {self$path} does not exist yet!"))

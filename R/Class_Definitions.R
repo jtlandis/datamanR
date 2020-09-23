@@ -200,9 +200,8 @@ DataManR <- R6::R6Class(classname = "DataManR",
                             self
                           },
                           #' @description
-                          #'  internal validate function for running internal checks
-                          #'  Method will return TRUE or an error.
-                          #'  Note: DataManR object is not valid unless all TInfos
+                          #'  overrides \code{\link{BaseDMR$validate}} to run more specific checks.
+                          #'  Note: DataManR object is not valid unless all TInfo Objects
                           #'  are also valid.
                           validate = function(){
                             validate_warn(
