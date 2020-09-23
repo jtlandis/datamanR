@@ -5,7 +5,7 @@
 #' data table
 #'
 #' @export
-TableDefinition <- R6::R6Class(classname = "TableDefinition",
+TInfo <- R6::R6Class(classname = "TInfo",
                                inherit = BaseDMR,
                                private = list(
                                  .col_names = NA_character_,
@@ -26,7 +26,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                      require_scalar_char(value, "`$path`")
                                      value <- value %na% full_path(value)
                                      validate_error(
-                                       need2(!fs::is_dir(value), "`$path` should not point to a directory for class 'TableDefinition'"))
+                                       need2(!fs::is_dir(value), "`$path` should not point to a directory for class 'TInfo'"))
                                      if(!identical(private$.path, value)){
                                        validate_warn(
                                          need2(file.exists(value), glue("`$path`: {value} does not exist yet!")))
@@ -109,7 +109,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                  #' @field data contains the data.table class.
                                  data = NULL,
                                  #' @description
-                                 #'  TableDefinition Class constructor
+                                 #'  TInfo Class constructor
                                  #' @param data Indicates what data to store.
                                  #' @param name Specifies the name field.
                                  #' @param path Specifies the path field.
@@ -131,7 +131,7 @@ TableDefinition <- R6::R6Class(classname = "TableDefinition",
                                    self$update()
                                  },
                                  print = function(){
-                                   cat("DataTableDefinitions:\n",
+                                   cat("DataTInfos:\n",
                                        "  Name  : ", self$name,"\n",
                                        "  Path  : ", self$path,"\n",
                                        "  md5sum: ", self$md5sum,"\n",

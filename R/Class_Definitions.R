@@ -3,9 +3,9 @@
 #' @name DataManR
 #'
 #' @description The DataManR object is responsible for containing
-#'  and managing the TableDefinition class. While most methods that affect
-#'  the data exist on the TableDefinition object, DataManR's fields
-#'  and methods describe and affect how TableDefinition$data relate to
+#'  and managing the TInfo class. While most methods that affect
+#'  the data exist on the TInfo object, DataManR's fields
+#'  and methods describe and affect how TInfo$data relate to
 #'  each other.
 #'
 #' @export
@@ -42,11 +42,11 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           }
                         ),
                         public = list(
-                          #' @field view The active TableDefinition Object. This field
+                          #' @field view The active TInfo Object. This field
                           #'  should be treated as a scratch space as operations on view
-                          #'  should not affect the original TableDefinition Object.
+                          #'  should not affect the original TInfo Object.
                           view = NULL,
-                          #' @field Tables List of TableDefinition Objects that DataManR
+                          #' @field Tables List of TInfo Objects that DataManR
                           #'  is watching.
                           Tables = list(),
                           #' @description
@@ -55,16 +55,16 @@ DataManR <- R6::R6Class(classname = "DataManR",
                             private$links
                           },
                           #' @description
-                          #'  appends the private links data.frame with new TableDefinition
+                          #'  appends the private links data.frame with new TInfo
                           #'  link information. The links data.frame describes how two
-                          #'  TableDefinitions will be merged if the join method is called.
+                          #'  TInfos will be merged if the join method is called.
                           #'  The terms "Left" and "Right" are to inform which arguments are
                           #'  paird together and do not imply which direction the merge occurs.
                           #'
-                          #'  @param LeftTable vector of TableDefinition names
-                          #'  @param LeftKey vector of TableDefinition col_names
-                          #'  @param RightTable vector of TableDefinition names
-                          #'  @param RightKey vector of TableDefinition col_names
+                          #'  @param LeftTable vector of TInfo names
+                          #'  @param LeftKey vector of TInfo col_names
+                          #'  @param RightTable vector of TInfo names
+                          #'  @param RightKey vector of TInfo col_names
                           setTableLink = function(LeftTable, LeftKey, RightTable, RightKey) {
                             if(!all(names(self$Tables)%in%c(LeftTable, RightTable))){
                               rlang::abort("{LeftTable} and/or {RightTable} are not accessible by Data Manager {self$name}.\n")
@@ -87,9 +87,9 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           },
                           #' @description
                           #'  Convience function to test which keys will be used on
-                          #'  a pair of TableDefinition names.
-                          #'  @param x TableDefinition name
-                          #'  @param y TableDefinition name
+                          #'  a pair of TInfo names.
+                          #'  @param x TInfo name
+                          #'  @param y TInfo name
                           #'  @return data.frame of corresponding linked keys. data.fram
                           #'  has column names "by.x" and "by.y"
                           pull_key_pairs = function(x,y){
@@ -105,10 +105,10 @@ DataManR <- R6::R6Class(classname = "DataManR",
                               select(by.x, by.y)
                           },
                           #' @description
-                          #'  performs a full join on two TableDefinitions. Results are assigned
+                          #'  performs a full join on two TInfos. Results are assigned
                           #'  to DataManR$view
-                          #'  @param x TableDefinition object
-                          #'  @param y TableDefinition object
+                          #'  @param x TInfo object
+                          #'  @param y TInfo object
                           full_join = function(x, y){
                             self$view <- x
                             keys_pairs <- self$pull_key_pairs(x$name, y$name)
@@ -128,11 +128,11 @@ DataManR <- R6::R6Class(classname = "DataManR",
                             invisible(self)
                           },
                           #' @description
-                          #'  adds a TableDefinition object to the list in
+                          #'  adds a TInfo object to the list in
                           #'  \code{\link{DataManR$Tables}}. The Definition must
                           #'  be named and cannot have the same name of a table
                           #'  managed by this DataManR object.
-                          #' @param def A TableDefinition object
+                          #' @param def A TInfo object
                           addTable = function(def){
                             validate_error(
                               need2(!is.na(def$name), "Table Definition provided MUST have a name!"),
@@ -147,7 +147,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #'  Note: The removed Table's .rds file will remain
                           #'  on disk, but since it isn't managed by this
                           #'  DataManR object, it could be overwritten easily.
-                          #'  @param def TableDefinition object
+                          #'  @param def TInfo object
                           rmTable = function(def){
                             def$save()
                             self$Tables[[def$name]] <- NULL
@@ -156,7 +156,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #'  saves a copy of this R Object as an .rds file
                           #'  in the \code{\link{DataManR$rds_file}} as default.
                           #'  @param file file path to save R Object
-                          #'  @param saveData Logical to indicate if TableDefinition's
+                          #'  @param saveData Logical to indicate if TInfo's
                           #'  data field should be saved too. Default is set to FALSE
                           #'  to prevent the resulting _DataManR.rds file from being
                           #'  too large. Set to TRUE if you want a reproducable object.
@@ -176,7 +176,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           },
                           #' @description
                           #'  DataManR's prefered clone method. The data field of
-                          #'  TableDefinition Object contains class data.table which
+                          #'  TInfo Object contains class data.table which
                           #'  cannot be cloned via the base clone method. Thus copy
                           #'  is called explicitly to ensure the cloned DataManR object
                           #'  has a copy of the internal data.tables.
@@ -202,7 +202,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #' @description
                           #'  internal validate function for running internal checks
                           #'  Method will return TRUE or an error.
-                          #'  Note: DataManR object is not valid unless all TableDefinitions
+                          #'  Note: DataManR object is not valid unless all TInfos
                           #'  are also valid.
                           validate = function(){
                             validate_warn(
