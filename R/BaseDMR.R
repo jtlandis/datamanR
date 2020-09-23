@@ -4,7 +4,7 @@
 #'
 #' @description
 #'  This class will contain fields and methods to be inherited
-#'  to the classes 'TableDefinition' and 'DataManR'. Class
+#'  to the classes 'TInfo' and 'DataManR'. Class
 #'  'BaseDMR' is not intended to be instantiated directly.
 #'
 BaseDMR <- R6::R6Class(classname = "BaseDMR",

@@ -367,7 +367,7 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    invisible(self)
                                  },
                                  #' @description
-                                 #'  wrapper function for {\link[data.table]{dcast}.
+                                 #'  wrapper function for \link[data.table]{dcast}.
                                  #' @param cols character vector specifying which columns whose values will become new columns.
                                  #' @param value.var character vector specifying which values will be used for new entries
                                  #' @param fun.aggregate aggregate function to be used if multiple values exist.

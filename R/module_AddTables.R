@@ -184,7 +184,7 @@ uploadfileServer <- function(id, roots = c(home = getwd())){
         }
         if(inherits(upload, "data.frame")){
           def_ <- upload
-        } else if(inherits(upload, "TableDefinition")){
+        } else if(inherits(upload, "TInfo")){
           def_ <- copy(upload$data)
         }
         return(def_)
@@ -384,7 +384,7 @@ readremoteServer <- function(id, roots = c(home = getwd())){
         }
         if(inherits(upload, "data.frame")){
           def_ <- upload
-        } else if(inherits(upload, "TableDefinition")){
+        } else if(inherits(upload, "TInfo")){
           def_ <- copy(upload$data)
         } else {
           validate(need("Please Select a _TableDef.rds file or a regular data file (.csv, .tsv, etc)"))
