@@ -1,8 +1,11 @@
-#' @title R6 Class to represent Data Table Information
+#' @title R6 Class TInfo
 #'
 #' @description
-#' Container to hold methods and useful information about a
-#' data table
+#' TInfo, short for "Table Information", is a Class designed to hold methods
+#'  and useful information about a data table. Fields range from inforamation
+#'  on the data.table attributes to details on disk location to modification
+#'  history. Methods generally modify the data field in place and do not
+#'  have copy on modify semantics.
 #'
 #' @export
 TInfo <- R6::R6Class(classname = "TInfo",
@@ -96,10 +99,10 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                  },
                                  #' @field rds_file contains the expected rds file. This
                                  #' is expected to save in the same directory as
-                                 #' `$path` but will use `$name`_TableDef.rds
+                                 #' `$path` but will use `$name`_TInfo.rds
                                  rds_file = function(value) {
                                    if(missing(value)){
-                                     str_c(dirname(self$path),"/",self$name,"_TableDef.rds")
+                                     str_c(dirname(self$path),"/",self$name,"_TInfo.rds")
                                    } else {
                                      abort("`$rds_file` is read only!")
                                    }
