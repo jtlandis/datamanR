@@ -55,7 +55,7 @@ addDefServer <- function(id, roots = c(home = getwd())){
       })
 
       output$preview <- renderPrint({
-        cat("DataTableDefinitions:\n",
+        cat("DataTableInformation:\n",
             "  Name  : ", deftab$name,"\n",
             "  Path  : ", deftab$path,"\n",
             "  md5sum: ", deftab$md5sum,"\n",

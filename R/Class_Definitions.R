@@ -30,8 +30,8 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #' @field rds_file shorthand value for the default .rds
                           #' file name for this object. This field is
                           #' read only and a concatination of
-                          #' \code{\link{DataManR$path}}/\cod{\link{DataManR$name}}_DataManR.rds
-                          #' This object is only saved to disk when \code{\link{DataManR$save}} is
+                          #' \code{self$name}/\code{self$path}_DataManR.rds
+                          #' This object is only saved to disk when \href{#method-save}{\code{DataManR$save()}} is
                           #' called.
                           rds_file = function(value) {
                             if(missing(value)){
@@ -61,10 +61,10 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #'  The terms "Left" and "Right" are to inform which arguments are
                           #'  paird together and do not imply which direction the merge occurs.
                           #'
-                          #'  @param LeftTable vector of TInfo names
-                          #'  @param LeftKey vector of TInfo col_names
-                          #'  @param RightTable vector of TInfo names
-                          #'  @param RightKey vector of TInfo col_names
+                          #' @param LeftTable vector of TInfo names
+                          #' @param LeftKey vector of TInfo col_names
+                          #' @param RightTable vector of TInfo names
+                          #' @param RightKey vector of TInfo col_names
                           setTableLink = function(LeftTable, LeftKey, RightTable, RightKey) {
                             if(!all(names(self$Tables)%in%c(LeftTable, RightTable))){
                               rlang::abort("{LeftTable} and/or {RightTable} are not accessible by Data Manager {self$name}.\n")
@@ -88,9 +88,9 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #' @description
                           #'  Convience function to test which keys will be used on
                           #'  a pair of TInfo names.
-                          #'  @param x TInfo name
-                          #'  @param y TInfo name
-                          #'  @return data.frame of corresponding linked keys. data.fram
+                          #' @param x TInfo name
+                          #' @param y TInfo name
+                          #' @return data.frame of corresponding linked keys. data.frame
                           #'  has column names "by.x" and "by.y"
                           pull_key_pairs = function(x,y){
                             private$links %>%
@@ -107,8 +107,8 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #' @description
                           #'  performs a full join on two TInfos. Results are assigned
                           #'  to DataManR$view
-                          #'  @param x TInfo object
-                          #'  @param y TInfo object
+                          #' @param x TInfo object
+                          #' @param y TInfo object
                           full_join = function(x, y){
                             self$view <- x
                             keys_pairs <- self$pull_key_pairs(x$name, y$name)
@@ -129,7 +129,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           },
                           #' @description
                           #'  adds a TInfo object to the list in
-                          #'  \code{\link{DataManR$Tables}}. The Definition must
+                          #'  self$Tables. The Definition must
                           #'  be named and cannot have the same name of a table
                           #'  managed by this DataManR object.
                           #' @param def A TInfo object
@@ -142,21 +142,22 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           },
                           #' @description
                           #'  removes a Table Definition object from the list in
-                          #'  \code{\link{DataManR$Tables}}. It's save method
+                          #'  self$Tables. It's save method
                           #'  is called and then removed from this list.
                           #'  Note: The removed Table's .rds file will remain
                           #'  on disk, but since it isn't managed by this
                           #'  DataManR object, it could be overwritten easily.
-                          #'  @param def TInfo object
+                          #' @param def TInfo object
                           rmTable = function(def){
                             def$save()
                             self$Tables[[def$name]] <- NULL
                           },
                           #' @description
                           #'  saves a copy of this R Object as an .rds file
-                          #'  in the \code{\link{DataManR$rds_file}} as default.
-                          #'  @param file file path to save R Object
-                          #'  @param saveData Logical to indicate if TInfo's
+                          #'  in the self$rds_file as default.
+                          #'
+                          #' @param file file path to save R Object
+                          #' @param saveData Logical to indicate if TInfo's
                           #'  data field should be saved too. Default is set to FALSE
                           #'  to prevent the resulting _DataManR.rds file from being
                           #'  too large. Set to TRUE if you want a reproducable object.
@@ -180,7 +181,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           #'  cannot be cloned via the base clone method. Thus copy
                           #'  is called explicitly to ensure the cloned DataManR object
                           #'  has a copy of the internal data.tables.
-                          #'  @param deep whether it should be a deep clone.
+                          #' @param deep whether it should be a deep clone.
                           copy = function(deep = FALSE){
                             clone_ <- self$clone(deep = deep)
                             clone_$Tables <- lapply(clone_$Tables, function(x){x$copy()})
@@ -188,9 +189,9 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           },
                           #' @description
                           #'  instantiate a DataManR object.
-                          #'  @param name Specifies the \code{\link{DataManR$name}} field
-                          #'  @param path Specifies the \code{\link{DataManR$path}} field
-                          #'  @param Tables Specifies the \code{\link{DataManR$Tables}} field
+                          #' @param name Specifies the name field
+                          #' @param path Specifies the path field
+                          #' @param Tables Specifies the self$Tables field
                           initialize = function(name = NA_character_,
                                                 path = NA_character_,
                                                 Tables = list()){
@@ -200,7 +201,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                             self
                           },
                           #' @description
-                          #'  overrides \code{\link{BaseDMR$validate}} to run more specific checks.
+                          #'  overrides \code{BaseDMR$validate()} to run more specific checks.
                           #'  Note: DataManR object is not valid unless all TInfo Objects
                           #'  are also valid.
                           validate = function(){

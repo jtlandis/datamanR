@@ -140,7 +140,7 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                  #' @description
                                  #'  print quick information about the TInfo Object
                                  print = function(){
-                                   cat("DataTInfos:\n",
+                                   cat("DataTableInformation:\n",
                                        "  Name  : ", self$name,"\n",
                                        "  Path  : ", self$path,"\n",
                                        "  md5sum: ", self$md5sum,"\n",
@@ -151,7 +151,7 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    }
                                  },
                                  #' @description
-                                 #'  overrides \code{\link{BaseDMR$validate}} to run more specific checks.
+                                 #'  overrides \code{BaseDMR$validate} to run more specific checks.
                                  validate = function(){
                                    validate_warn(
                                      need2(file.exists(self$path), glue("file: {self$path} does not exist yet!"))
@@ -174,6 +174,10 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    )
                                    TRUE
                                  },
+                                 #' @description
+                                 #'  update method for TInfo Object. This method is handy for
+                                 #'  initiating field updates incase data has changed in memory
+                                 #'  or on disk.
                                  update = function(){
                                    #if data has changed, update col_names and col_types
                                    if(is.null(self$data)){
@@ -184,12 +188,22 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                      self$col_types <- colclasses(self$data)
                                    }
                                    if(file.exists(self$path)){
-                                     private$.md5sum <- tools::md5sum(self$path)
+                                     .md5sum <- tools::md5sum(self$path)
+                                     if(!identical(private$.md5sum, .md5sum)) {
+                                       private$.md5sum <- .md5sum
+                                       self$push_history(.md5sum, "`$md5sum`", "updated to:")
+                                     }
                                    } else {
                                      warn("`$path` does not exist. Please write table to update md5sum.")
                                    }
                                    invisible(self)
                                  },
+                                 #' @description
+                                 #'  Writes in data to disk
+                                 #' @param data data to write.
+                                 #' @param file file to write.
+                                 #' @param sep delimiter to use.
+                                 #' @param append if file should append current disk image.
                                  write = function(data = self$data,
                                                   file = self$path,
                                                   sep = ",",
@@ -203,6 +217,12 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    }
                                    invisible(self)
                                  },
+                                 #' @description
+                                 #'  read data from disk. If path is invalid then
+                                 #'  an empty data.table is made with the same column names and classes
+                                 #'  as specified by `$col_names` and `$col_types` respetively.
+                                 #'  If these fields are empty, then the function is aborted.
+                                 #' @return returns a data.table object as opposed to self.
                                  read = function() {
                                    if(file.exists(self$path)){
                                      data_table <- data.table::fread(file = self$path, header = T, colClasses = self$col_types)
@@ -217,9 +237,32 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    }
                                    return(data_table)
                                  },
+                                 #' @description
+                                 #'  write self as an rds file. by default file is
+                                 #'  written to location specified by the
+                                 #'  `$rds_file` field
+                                 #' @param file file location to save image
                                  save = function(file = self$rds_file){
                                    saveRDS(object = self, file = file)
                                  },
+                                 #' @description
+                                 #'  similar to \code{\link{dplyr::mutate}} this function will
+                                 #'  modify `$data` field in place using \code{\link{data.table}}
+                                 #'  logic.
+                                 #' @param i expression evaluating to logical vectory or row indexs.
+                                 #'  This informs which rows are included in the mutation.
+                                 #' @param j named list of expressions to enact. This parameter is
+                                 #'  most similar to the \code{\dots} argument in \code{\link{dplyr::mutate}}
+                                 #'  except a list is expected. This which columns are made/mutated and how.
+                                 #'  j is the only argument that is required, otherwise if j is missing or
+                                 #'  NULL then this method returns self with no changes.
+                                 #' @param by character vector of columns to group by if at all.
+                                 #' @param deparse logical value indicating if i and j should be deparsed.
+                                 #'  by default this method assumes the user will pass expressions
+                                 #'  that need to be evaluated in the context of `$data` field. Setting
+                                 #'  this value to FALSE will imply that the user will pass values
+                                 #'  as a character string. This makes programming with the package
+                                 #'  much easier.
                                  mutate = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
                                    #browser()
                                    if(deparse){
@@ -248,10 +291,24 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                                               " on rows matching ", i),
                                                   i.j.by = str_c("Mutated `$data` column(s) by expression ", j,
                                                                  " on rows matching ", i,
-                                                                 " and grouped by: ", str_c(by, collapse = ", ")))
-                                   self$push_history(custom = hist)
+                                                                 " and grouped by: ", str_c(by, collapse = ", ")),
+                                                  NULL)
+
+                                   if(!is.null(hist)) self$push_history(custom = hist)
                                    invisible(self)
                                  },
+                                 #' @description
+                                 #'  similar to \code{\link{dplyr::filter}} this function will
+                                 #'  modify `$data` field in place using \code{\link{data.table}}
+                                 #'  \code{\link{`:=`}}
+                                 #' @param i expression evaluating to logical vectory or row indexs.
+                                 #'  This informs which rows are included in the mutation.
+                                 #' @param deparse logical value indicating if i should be deparsed.
+                                 #'  by default this method assumes the user will pass expressions
+                                 #'  that need to be evaluated in the context of `$data` field. Setting
+                                 #'  this value to FALSE will imply that the user will pass values
+                                 #'  as a character string. This makes programming with the package
+                                 #'  much easier.
                                  filter = function(i = NULL, deparse = TRUE){
                                    if(deparse){
                                      i <- deparse(substitute(i))
@@ -263,6 +320,28 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    self$push_history(custom = str_c("Filtered `$data` for rows matching ", i))
                                    invisible(self)
                                  },
+                                 #' @description
+                                 #'  similar to \code{\link{dplyr::summarise}} this function will
+                                 #'  modify `$data` field in place using \code{\link{data.table}}
+                                 #'  logic. This has a few key differences. This does not require
+                                 #'  that expressions passed return a value of length 1. Evaluation
+                                 #'  does NOT happen in place with \code{\link{`:=`}}, thus
+                                 #'  columns are subsetted in the output.
+                                 #'
+                                 #' @param i expression evaluating to logical vectory or row indexs.
+                                 #'  This informs which rows are included in the mutation.
+                                 #' @param j named list of expressions to enact. This parameter is
+                                 #'  most similar to the \code{\dots} argument in \code{\link{dplyr::summarise}}
+                                 #'  except a list is expected. Describes which columns are made/summarised and how.
+                                 #'  j is the only argument that is required, otherwise if j is missing or
+                                 #'  NULL then this method returns self with no changes.
+                                 #' @param by character vector of columns to group by if at all.
+                                 #' @param deparse logical value indicating if i and j should be deparsed.
+                                 #'  by default this method assumes the user will pass expressions
+                                 #'  that need to be evaluated in the context of `$data` field. Setting
+                                 #'  this value to FALSE will imply that the user will pass values
+                                 #'  as a character string. This makes programming with the package
+                                 #'  much easier.
                                  summarise = function(i = NULL, j = NULL, by = NULL, deparse = TRUE){
                                    # browser()
                                    if(deparse){
@@ -288,6 +367,11 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    self$push_history(custom = hist)
                                    invisible(self)
                                  },
+                                 #' @description
+                                 #'  wrapper function for \code{\link{data.table::dcast}}.
+                                 #' @param cols character vector specifying which columns whose values will become new columns.
+                                 #' @param value.var character vector specifying which values will be used for new entries
+                                 #' @param fun.aggregate aggregate function to be used if multiple values exist.
                                  reshape_wider = function(cols,
                                                           value.var = guess(self$data),
                                                           fun.aggregate = NULL){
@@ -309,6 +393,19 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    self$push_history(custom = hist)
                                    invisible(self)
                                  },
+                                 #' @description
+                                 #'  wrapper function for \code{\link{data.table::melt}}.
+                                 #' @param measure.vars which columns should be melted into
+                                 #'  a new column. This argument may be a list if you wish
+                                 #'  to condense into multiple columns. For convenience/clarity
+                                 #'  in the case of multiple melted columns, resulting column
+                                 #'  names can be supplied as names to the elements measure.vars.
+                                 #' @param variable.name name for the measured variable names column.
+                                 #'  The default name is 'variable'
+                                 #' @param value.name name for the molten data values column(s).
+                                 #'  The default name is 'value'. Multiple names can be provided
+                                 #'  here for the case when measure.vars is a list, though note
+                                 #'  well that the names provided in measure.vars take precedence
                                  reshape_longer = function(measure.vars,
                                                            variable.name = "variable",
                                                            value.name = "value"){
@@ -327,6 +424,13 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                    invisible(self)
 
                                  },
+                                 #' @description
+                                 #'  TInfo's prefered clone method. The data field of
+                                 #'  TInfo Object contains class data.table which
+                                 #'  cannot be cloned via the base clone method. Thus copy
+                                 #'  is called explicitly to ensure the cloned TInfo object
+                                 #'  has a copy of the internal data.tables.
+                                 #' @param deep whether it should be a deep clone.
                                  copy = function(deep = FALSE){
                                    clone_ <- self$clone(deep = deep)
                                    clone_$data <- copy(self$data)
