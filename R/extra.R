@@ -42,6 +42,8 @@ colclasses <- function(data){
 #' @return vector of TRUE FALSE values
 #' @export
 "%match%" <- function(a, b){
+  if(identical(a,b)) return(TRUE)
+  if(is.null(b)) return(FALSE)
   str_detect(a, str_group(b))
 }
 

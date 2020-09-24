@@ -531,7 +531,11 @@ definetablServer <- function(id, roots){
         parseDirPath(roots = roots, input$directory)
       })
 
-      fullpath <- reactive(str_c(dir(),"/",file()))
+      fullpath <- reactive({
+        exten <- tools::file_ext(file())
+        file_ <- ifelse(exten=="", str_c(file(),".csv"), file())
+        str_c(dir(),"/", file_)
+        })
 
       output$dirout <- renderText(str_c(p(strong(dir()), style = "word-wrap: break-word;")))
 
@@ -569,18 +573,18 @@ definetablServer <- function(id, roots){
             id = ele_id,
               fluidRow(class = "dynamic_input_row",
                            column(4,
-                                  div(align = "center", textInput(ns(str_c(id_add, ".colname")), label = NULL, placeholder = "New Column Name")),
+                                  div(align = "center", textInput(ns(str_c(id_add, ".colname")), label = NULL, placeholder = "New Column Name")) #,
                                   #style = "height:25px;"
                                   ),
                            column(3,
                                   div(align = "center", selectInput(ns(str_c(id_add, ".coltype")),
                                               label = NULL,
                                               choices = c("character","numeric","integer","factor","logical"),
-                                              selected = "character"),
+                                              selected = "character") #,
                                       #style = "height:25px;"
                                       )),
                            column(2,
-                                  div(align = "center", checkboxInput(ns(str_c(id_add, ".keys")), "Is key?", FALSE),
+                                  div(align = "center", checkboxInput(ns(str_c(id_add, ".keys")), "Is key?", FALSE) #,
                                       #sytle = "height:25px;"
                                       )),
                            column(3,
@@ -590,7 +594,7 @@ definetablServer <- function(id, roots){
                                     actionButton(ns(str_c(id_add, ".remove")), NULL,
                                                  icon = icon("minus-square"), style = "background-color:#FF9270;"),
                                     actionButton(ns(str_c(id_add, ".add_bot")), NULL,
-                                                 icon = icon("arrow-down"), style = "background-color:#72B4D6;"),
+                                                 icon = icon("arrow-down"), style = "background-color:#72B4D6;") #,
                                     #style = "height:25px;"
                                     )
                                   ))
@@ -626,49 +630,32 @@ definetablServer <- function(id, roots){
 
       meta <- reactive({
         matches <- grep("indx_[0-9]+", names(input), value = TRUE)
-        matches <- matches[!matches %match% removed()]
-        matches <- matches[matches %match% c("colname","coltype","keys")]
         req(length(matches)>0)
-        meta_ <- data.frame(x = matches) %>%
-          mutate(
-            id = str_extract(x,"indx_[0-9]+"),
-            key = str_remove(x, "indx_[0-9]+\\.")
-          ) %>% spread(key = key, value = x) %>%
-          mutate_if(is.factor, as.character) %>%
-          mutate(
-            colname = unlist(lapply(colname, function(i) input[[i]])),
-            coltype = unlist(lapply(coltype, function(i) input[[i]])),
-            keys = unlist(lapply(keys, function(i) input[[i]]))
-          )
+        matches <- matches[!matches %match% removed() &
+                             matches %match% c("colname","coltype","keys")]
+        if(length(matches)==0) return(data.table(x = character()))
+        meta_ <- data.table(x = matches)[, `:=`(id = str_extract(x,"indx_[0-9]+"),
+                                                key = str_remove(x,"indx_[0-9]+\\."))] %>%
+          dcast(formula = ... ~ key, value.var = "x")
+        meta_ <- meta_[,`:=`(colname = unlist(lapply(colname, function(i) input[[i]])),
+                             coltype = unlist(lapply(coltype, function(i) input[[i]])),
+                             keys = unlist(lapply(keys, function(i) input[[i]])))]
         return(meta_)
 
       })
 
-
-      # columnnam <- reactive({
-      #   matches <- grep("indx_[0-9]+\\.colname", names(input), value = TRUE)
-      #   matches <- matches[!matches %match% removed()]
-      #   req(length(matches)>0)
-      #   unlist(lapply(matches, function(i){input[[i]]}))
-      # })
-      #
-      # columntyp <- reactive({
-      #   matches <- grep("indx_[0-9]+\\.coltype", names(input), value = TRUE)
-      #   matches <- matches[!matches %match% removed()]
-      #   req(length(matches)>0)
-      #   unlist(lapply(matches, function(i){input[[i]]}))
-      # })
-      #
       keys <- reactive({
-        req(meta(), dat())
-
+        req(meta())
         meta()[meta()$keys,]$colname
 
       })
 
       dat <- reactive({
 
-        req(meta())
+        validate(
+          need(nrow(meta())>0, "Meta Data is not evaluated yet!"),
+          need(any(str_length(meta()$colname)>0), "One column must be named!")
+        )
         data.table::fread(str_c(str_c(meta()$colname, collapse = ","),"\n"), colClasses = meta()$coltype)
       })
 
