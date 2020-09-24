@@ -2,4 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
-shiny.R
+man/*.Rd
+R/csv_module_Example.R
+R/simple_shinyDirSelect.R
+NAMESPACE
+*.rds
+*/*.rds
+*.csv
+*/*.csv

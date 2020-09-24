@@ -1,2 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+shiny.R
+R/csv_module_Example.R
+R/simple_shinyDirSelect.R
