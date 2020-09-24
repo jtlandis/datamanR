@@ -11,14 +11,15 @@ addDefUI <- function(id){
                uploadfileUI(ns("table_upload"))),
       tabPanel("Read  Remote",
                readremoteUI(ns("table_remote"))
-               ),
+      ),
       tabPanel("Define New",
                definetablUI(ns("table_define"))
-               )
+      )
     ),
     hr(),
     h3("Table Definition preview:"),
-    verbatimTextOutput(ns("preview"))
+    verbatimTextOutput(ns("preview")),
+    actionButton(ns("setTableInfo"), "Add To DataManR")
   )
 }
 
@@ -71,11 +72,36 @@ addDefServer <- function(id, roots = c(home = getwd())){
             "  keys  : ", str_c(deftab$keys, collapse =", "),"\n", sep = "")
       })
 
+      set <- reactive({
+        validate(
+          need(deftab$data, "Please load data before adding to DataManR"),
+          need(!is.na(deftab$name), "Please name Table before adding to DataManR")
+        )
+        input$setTableInfo
+      })
+
+
+      ret_keys <- reactive({
+        # isolate({
+        if(is.null(deftab$keys)||is.na(deftab$keys)||
+           (length(deftab$keys==1)&&str_length(deftab$keys)==0)) return(NA_character_)
+        deftab$keys#})
+      })
+
+      ret_path <- reactive({
+
+        #isolate({
+        validate(
+          need(!is.na(deftab$path), "Please choose a directory/file for table to be saved under")
+        )
+        deftab$path #})
+      })
 
       return(list(data = reactive(deftab$data),
                   name = reactive(deftab$name),
-                  path = reactive(deftab$path),
-                  keys = reactive(deftab$keys)))
+                  path = ret_path,
+                  keys = ret_keys,
+                  set = set))
 
     }
   )
@@ -98,7 +124,7 @@ uploadfileUI <- function(id){
     fluidRow(
       column(6,
              uiOutput(ns("ui1"))
-             ),
+      ),
       column(6,
              fluidRow(
                column(12,
@@ -112,7 +138,7 @@ uploadfileUI <- function(id){
                column(12,
                       actionButton(ns("set"), label = NULL, icon = icon("sync")), align = "center")
              )
-             )
+      )
     )
 
 
@@ -277,7 +303,7 @@ readremoteUI <- function(id){
     fluidRow(
       column(12,
              shinyFilesButton(ns("file"),
-                            "Remote Table", "Select A File", multiple =  F
+                              "Remote Table", "Select A File", multiple =  F
              ), align = "center")),
 
     uiOutput(ns("moreUIOptions")),
@@ -491,7 +517,7 @@ definetablUI <- function(id){
     fluidRow(
       column(12,
              tags$div(id="ele_indx_0000")
-             )
+      )
     ),
     fluidRow(
       column(12,
@@ -535,7 +561,7 @@ definetablServer <- function(id, roots){
         exten <- tools::file_ext(file())
         file_ <- ifelse(exten=="", str_c(file(),".csv"), file())
         str_c(dir(),"/", file_)
-        })
+      })
 
       output$dirout <- renderText(str_c(p(strong(dir()), style = "word-wrap: break-word;")))
 
@@ -556,7 +582,7 @@ definetablServer <- function(id, roots){
         req(input$add)
         count(count()+1)
         nele(nele()+1)
-        })
+      })
 
 
 
@@ -571,37 +597,37 @@ definetablServer <- function(id, roots){
           where = where(),
           ui= tags$div(
             id = ele_id,
-              fluidRow(class = "dynamic_input_row",
-                           column(4,
-                                  div(align = "center", textInput(ns(str_c(id_add, ".colname")), label = NULL, placeholder = "New Column Name")) #,
-                                  #style = "height:25px;"
-                                  ),
-                           column(3,
-                                  div(align = "center", selectInput(ns(str_c(id_add, ".coltype")),
-                                              label = NULL,
-                                              choices = c("character","numeric","integer","factor","logical"),
-                                              selected = "character") #,
-                                      #style = "height:25px;"
-                                      )),
-                           column(2,
-                                  div(align = "center", checkboxInput(ns(str_c(id_add, ".keys")), "Is key?", FALSE) #,
-                                      #sytle = "height:25px;"
-                                      )),
-                           column(3,
-                                  div(align = "center",
-                                    actionButton(ns(str_c(id_add, ".add_up")), NULL,
-                                                 icon = icon("arrow-up"), style = "background-color:#72B4D6;"),
-                                    actionButton(ns(str_c(id_add, ".remove")), NULL,
-                                                 icon = icon("minus-square"), style = "background-color:#FF9270;"),
-                                    actionButton(ns(str_c(id_add, ".add_bot")), NULL,
-                                                 icon = icon("arrow-down"), style = "background-color:#72B4D6;") #,
-                                    #style = "height:25px;"
-                                    )
-                                  ))
+            fluidRow(class = "dynamic_input_row",
+                     column(4,
+                            div(align = "center", textInput(ns(str_c(id_add, ".colname")), label = NULL, placeholder = "New Column Name")) #,
+                            #style = "height:25px;"
+                     ),
+                     column(3,
+                            div(align = "center", selectInput(ns(str_c(id_add, ".coltype")),
+                                                              label = NULL,
+                                                              choices = c("character","numeric","integer","factor","logical"),
+                                                              selected = "character") #,
+                                #style = "height:25px;"
+                            )),
+                     column(2,
+                            div(align = "center", checkboxInput(ns(str_c(id_add, ".keys")), "Is key?", FALSE) #,
+                                #sytle = "height:25px;"
+                            )),
+                     column(3,
+                            div(align = "center",
+                                actionButton(ns(str_c(id_add, ".add_up")), NULL,
+                                             icon = icon("arrow-up"), style = "background-color:#72B4D6;"),
+                                actionButton(ns(str_c(id_add, ".remove")), NULL,
+                                             icon = icon("minus-square"), style = "background-color:#FF9270;"),
+                                actionButton(ns(str_c(id_add, ".add_bot")), NULL,
+                                             icon = icon("arrow-down"), style = "background-color:#72B4D6;") #,
+                                #style = "height:25px;"
+                            )
+                     ))
 
 
-              )
           )
+        )
 
         observeEvent(input[[str_c(id_add, ".remove")]],{
           isolate(nele(nele()-1))
