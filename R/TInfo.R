@@ -228,7 +228,7 @@ TInfo <- R6::R6Class(classname = "TInfo",
                                      data_table <- data.table::fread(file = self$path, header = T, colClasses = self$col_types)
                                    } else if(!any(is.na(self$col_names))&&!any(is.na(self$col_types))){
                                      warn(glue("file: {self$path} is not valid.\nloading empty data.table.\n"))
-                                     data_table <- data.table::fread(c(paste0(self$col_names, collapse = ","),"\n"), colClasses = self$col_types)
+                                     data_table <- data.table::fread(str_c(str_c(self$col_names, collapse = ","),"\n"), colClasses = self$col_types)
                                    } else {
                                      error <- c()
                                      rlang::abort(glue("Cannot read table from definition.\n",

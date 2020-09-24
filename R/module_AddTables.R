@@ -580,7 +580,7 @@ definetablServer <- function(id, roots){
                                       #style = "height:25px;"
                                       )),
                            column(2,
-                                  div(align = "center", checkboxInput(ns(str_c(id_add, ".key")), "Is key?", FALSE),
+                                  div(align = "center", checkboxInput(ns(str_c(id_add, ".keys")), "Is key?", FALSE),
                                       #sytle = "height:25px;"
                                       )),
                            column(3,
@@ -627,12 +627,14 @@ definetablServer <- function(id, roots){
       meta <- reactive({
         matches <- grep("indx_[0-9]+", names(input), value = TRUE)
         matches <- matches[!matches %match% removed()]
+        matches <- matches[matches %match% c("colname","coltype","keys")]
         req(length(matches)>0)
         meta_ <- data.frame(x = matches) %>%
           mutate(
             id = str_extract(x,"indx_[0-9]+"),
             key = str_remove(x, "indx_[0-9]+\\.")
           ) %>% spread(key = key, value = x) %>%
+          mutate_if(is.factor, as.character) %>%
           mutate(
             colname = unlist(lapply(colname, function(i) input[[i]])),
             coltype = unlist(lapply(coltype, function(i) input[[i]])),

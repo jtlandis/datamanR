@@ -56,10 +56,11 @@ ui <- dashboardPage(
   ),
   dashboardBody(
     tags$head(
-      tags$style(
-        HTML('
-             '
-        )
+      tags$style(""
+        # HTML('
+        #
+        #      '
+        # )
       )
     ),
     tabItems(
