@@ -80,10 +80,10 @@ DataManR <- R6::R6Class(classname = "DataManR",
                               rlang::abort(glue_collapse(errors, sep = "\n"))
                             }
                             private$links <- rbind(private$links,
-                                             data.frame(LeftTable = LeftTable,
-                                                        LeftKey = LeftKey,
-                                                        RightTable = RightTable,
-                                                        RightKey = RightKey))
+                                                   data.frame(LeftTable = LeftTable,
+                                                              LeftKey = LeftKey,
+                                                              RightTable = RightTable,
+                                                              RightKey = RightKey))
                           },
                           #' @description
                           #'  Convience function to test which keys will be used on
@@ -95,7 +95,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                           pull_key_pairs = function(x,y){
                             private$links %>%
                               filter((LeftTable %in% x & RightTable %in% y)|
-                                      (LeftTable %in% y & RightTable %in% x)) %>%
+                                       (LeftTable %in% y & RightTable %in% x)) %>%
                               mutate(by.x = case_when(LeftTable %in% x ~ LeftKey,
                                                       RightTable %in% x ~ RightKey,
                                                       TRUE ~ NA_character_),
@@ -209,8 +209,7 @@ DataManR <- R6::R6Class(classname = "DataManR",
                               need2(file.exists(self$path), glue("file: {self$path} does not exist yet!"))
                             )
                             validate_error(
-                              need2(!is.na(self$name), glue("`$name` is not defined: {self$name}")),
-                              need2(str_length(self$name)>0, glue("`$name` must have at least 1 character.")),
+                              need2(!(is.na(self$name)||str_length(self$name)==0), glue("`$name` is not valid: {self$name}")),
                               need2(!is.na(self$path), glue("`$path` is not defined: {self$path}")),
                               need2(dir.exists(dirname(self$path)), glue("directory: {dirname(self$path)} does not exist yet!"))
                             )
