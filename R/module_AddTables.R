@@ -47,12 +47,21 @@ addDefServer <- function(id, roots = c(home = getwd())){
       })
 
       observe({
+        define_def$set()
+        deftab$data <- define_def$data()
+        deftab$name <- define_def$name()
+        deftab$keys <- define_def$keys()
+        deftab$path <- define_def$path()
+      })
+
+      observe({
         remote_def$set()
         deftab$data <- remote_def$data()
         deftab$name <- remote_def$name()
         deftab$keys <- remote_def$keys()
         deftab$path <- remote_def$path()
       })
+
 
       output$preview <- renderPrint({
         cat("DataTableInformation:\n",
@@ -387,7 +396,7 @@ readremoteServer <- function(id, roots = c(home = getwd())){
         } else if(inherits(upload, "TInfo")){
           def_ <- copy(upload$data)
         } else {
-          validate(need("Please Select a _TableDef.rds file or a regular data file (.csv, .tsv, etc)"))
+          validate("Please Select a _TableDef.rds file or a regular data file (.csv, .tsv, etc)")
         }
         return(def_)
       })
@@ -481,8 +490,12 @@ definetablUI <- function(id){
     ),
     fluidRow(
       column(12,
-             tags$div(id="ele_indx_0")
+             tags$div(id="ele_indx_0000")
              )
+    ),
+    fluidRow(
+      column(12,
+             actionButton(ns("set"), label = NULL, icon = icon("sync")), align = "center")
     )
   )
 }
@@ -496,7 +509,8 @@ definetablServer <- function(id, roots){
       count <- reactiveVal(0, "Count")
       nele <- reactiveVal(0, "N_ele")
       where <- reactiveVal("afterEnd", "insert_where")
-      selec <- reactiveVal("#ele_indx_0")
+      selec <- reactiveVal("#ele_indx_0000")
+      removed <- reactiveVal()
 
       shinyDirChoose(input, id = "directory", roots = roots)
       nam <- reactive({
@@ -517,7 +531,9 @@ definetablServer <- function(id, roots){
         parseDirPath(roots = roots, input$directory)
       })
 
-      output$dirout <- renderPrint(str_c(p(strong(dir()), style = "word-wrap: break-word;")))
+      fullpath <- reactive(str_c(dir(),"/",file()))
+
+      output$dirout <- renderText(str_c(p(strong(dir()), style = "word-wrap: break-word;")))
 
 
 
@@ -543,39 +559,53 @@ definetablServer <- function(id, roots){
       observeEvent(count(), {
         req(count()>0)
         ns <- session$ns
-        select <- ifelse(nele()==1, "#ele_indx_0", selec())
-        id_add <- str_c("indx_", count())
-        remove_id <- str_c("remove_", id_add)
+        select <- ifelse(nele()==1, "#ele_indx_0000", selec())
+        id_add <- str_c("indx_", sprintf("%04d", count()))
         ele_id <- str_c("ele_", id_add)
         insertUI(
           selector = select,
           where = where(),
           ui= tags$div(
             id = ele_id,
+              fluidRow(class = "dynamic_input_row",
+                           column(4,
+                                  div(align = "center", textInput(ns(str_c(id_add, ".colname")), label = NULL, placeholder = "New Column Name")),
+                                  #style = "height:25px;"
+                                  ),
+                           column(3,
+                                  div(align = "center", selectInput(ns(str_c(id_add, ".coltype")),
+                                              label = NULL,
+                                              choices = c("character","numeric","integer","factor","logical"),
+                                              selected = "character"),
+                                      #style = "height:25px;"
+                                      )),
+                           column(2,
+                                  div(align = "center", checkboxInput(ns(str_c(id_add, ".key")), "Is key?", FALSE),
+                                      #sytle = "height:25px;"
+                                      )),
+                           column(3,
+                                  div(align = "center",
+                                    actionButton(ns(str_c(id_add, ".add_up")), NULL,
+                                                 icon = icon("arrow-up"), style = "background-color:#72B4D6;"),
+                                    actionButton(ns(str_c(id_add, ".remove")), NULL,
+                                                 icon = icon("minus-square"), style = "background-color:#FF9270;"),
+                                    actionButton(ns(str_c(id_add, ".add_bot")), NULL,
+                                                 icon = icon("arrow-down"), style = "background-color:#72B4D6;"),
+                                    #style = "height:25px;"
+                                    )
+                                  ))
 
-            hr(),
-              fluidRow(
 
-                column(5,
-                       textInput(ns(str_c(id_add, ".colname")), label = NULL, placeholder = "New Column Name"), sytle = "max-height:25px;"),
-                column(3,
-                       selectInput(ns(str_c(id_add, ".coltype")),
-                                   label = NULL,
-                                   choices = c("character","numeric","integer","factor","logical"), selected = "character"), sytle = "max-height:25px;"),
-                column(2,
-                       checkboxInput(ns(str_c(id_add, ".key")), "Is key?", FALSE), sytle = "max-height:25px;"),
-                column(2,
-                       actionButton(ns(str_c(id_add, ".add_up")), NULL, icon = icon("arrow-up"), style = "background-color:#72B4D6;"),
-                       actionButton(ns(str_c(remove_id)), NULL, icon = icon("minus-square"), style = "background-color:#FF9270;"),
-                       actionButton(ns(str_c(id_add, ".add_bot")), NULL, icon = icon("arrow-down"), style = "background-color:#72B4D6;"), sytle = "max-height:25px;")
-              ), hr()
-          ))
+              )
+          )
 
-        observeEvent(input[[remove_id]],{
+        observeEvent(input[[str_c(id_add, ".remove")]],{
           isolate(nele(nele()-1))
           removeUI(
             selector = str_c("#", ele_id)
           )
+          removed(c(removed(), id_add))
+          remove_shiny_inputs(id = id_add, .input = input)
         })
 
         observeEvent(input[[str_c(id_add,".add_up")]],{
@@ -594,44 +624,63 @@ definetablServer <- function(id, roots){
 
       })
 
+      meta <- reactive({
+        matches <- grep("indx_[0-9]+", names(input), value = TRUE)
+        matches <- matches[!matches %match% removed()]
+        req(length(matches)>0)
+        meta_ <- data.frame(x = matches) %>%
+          mutate(
+            id = str_extract(x,"indx_[0-9]+"),
+            key = str_remove(x, "indx_[0-9]+\\.")
+          ) %>% spread(key = key, value = x) %>%
+          mutate(
+            colname = unlist(lapply(colname, function(i) input[[i]])),
+            coltype = unlist(lapply(coltype, function(i) input[[i]])),
+            keys = unlist(lapply(keys, function(i) input[[i]]))
+          )
+        return(meta_)
+
+      })
 
 
+      # columnnam <- reactive({
+      #   matches <- grep("indx_[0-9]+\\.colname", names(input), value = TRUE)
+      #   matches <- matches[!matches %match% removed()]
+      #   req(length(matches)>0)
+      #   unlist(lapply(matches, function(i){input[[i]]}))
+      # })
+      #
+      # columntyp <- reactive({
+      #   matches <- grep("indx_[0-9]+\\.coltype", names(input), value = TRUE)
+      #   matches <- matches[!matches %match% removed()]
+      #   req(length(matches)>0)
+      #   unlist(lapply(matches, function(i){input[[i]]}))
+      # })
+      #
+      keys <- reactive({
+        req(meta(), dat())
+
+        meta()[meta()$keys,]$colname
+
+      })
+
+      dat <- reactive({
+
+        req(meta())
+        data.table::fread(str_c(str_c(meta()$colname, collapse = ","),"\n"), colClasses = meta()$coltype)
+      })
+
+      return(list(name = nam, path = fullpath, data = dat, keys = keys, set = reactive(input$set)))
 
     }
   )
 }
 
 
-# define_ui <- function(id){
-#   ns <- NS(id)
-#   tags$div(id = environment(ns)[['namespace']],
-#           tagList(
-#             fluidRow(
-#                      column(5,
-#                             textInput(ns("colname"), label = NULL, placeholder = "New Column Name")),
-#                      column(3,
-#                             selectInput(ns("coltype"),
-#                                         label = NULL,
-#                                         choices = c("character","numeric","integer","factor","logical"), selected = "character")),
-#                      column(2,
-#                             checkboxInput(ns("key"), "Is key?", FALSE)),
-#                      column(2,
-#                             fluidRow(actionButton(ns("add_up"), NULL, icon = icon("dashboard"), style = "height:15px")),
-#                             fluidRow(actionButton(ns("delete_this"), NULL, icon = icon("minus-squar"), style = "height:15px")),
-#                             fluidRow(actionButton(ns("add_bot"), NULL, icon = icon("arrow-from-top"), style = "height:15px")))
-#                      )
-#           )
-#   )
-# }
-#
-# define_server <- function(id){
-#
-# }
-#
-# t <- fluidPage(shiny::wellPanel(define_ui("test")))
-#
-# s <- function(input, output, session) {
-#
-# }
-#
-# shinyApp(t,s)
+remove_shiny_inputs <- function(id, .input) {
+  invisible(
+    lapply(grep(id, names(.input), value = TRUE), function(i) {
+      .subset2(.input, "impl")$.values$remove(i)
+    })
+  )
+}
