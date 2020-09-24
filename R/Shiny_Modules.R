@@ -117,10 +117,7 @@ loadDataManRServer <- function(id, roots = c(home = getwd())) {
   )
 }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 8883174fffe59fc7385921cf4383eda41b6101c6
 #' @export
 modDataManRUI <- function(id){
   ns <- NS(id)
@@ -129,12 +126,8 @@ modDataManRUI <- function(id){
     uiOutput(ns("ui")),
     hr(),
     h3("Preview"),
-<<<<<<< HEAD
     verbatimTextOutput(ns("preview")),
     actionButton(ns("save"), "Save")
-=======
-    verbatimTextOutput(ns("preview"))
->>>>>>> 8883174fffe59fc7385921cf4383eda41b6101c6
 
   )
 }
@@ -145,10 +138,6 @@ modDataManServer <- function(id, roots = c(home = getwd()), datamanR) {
     id,
     function(input, output, session){
 
-<<<<<<< HEAD
-      #dm <- reactiveVal(datamanR)
-=======
->>>>>>> 8883174fffe59fc7385921cf4383eda41b6101c6
       shinyDirChoose(input, "directory", roots = roots, filetypes = c('', 'rds'))
 
       dir <- reactive({
@@ -166,10 +155,6 @@ modDataManServer <- function(id, roots = c(home = getwd()), datamanR) {
                  textInput(ns("name"), label = "Name", value = datamanR()$name),
                  selectInput(ns("perm"), "Permission Level", choices = c("public","private"), selected = datamanR()$access)),
           column(width = 6,
-<<<<<<< HEAD
-                 shinyDirButton(ns("directory"), "New Directory", "Select New Directory"),
-                 textOutput(ns("dirout")))
-=======
                  br(),
                  shinyDirButton(ns("directory"), "New Directory", "Select New Directory"),
                  htmlOutput(ns("dirout")),
@@ -182,30 +167,14 @@ modDataManServer <- function(id, roots = c(home = getwd()), datamanR) {
                                          "old version is deleted. Selecting \"No\" will preserve the ",
                                          "old version on the file system essentially making a copy.",
                                          " It is generally recommened ",
-                                         "to keep this toggled as \"Yes\" to prevent redundant files."),placement = "bottom"),)
->>>>>>> 8883174fffe59fc7385921cf4383eda41b6101c6
+                                         "to keep this toggled as \"Yes\" to prevent redundant files."),placement = "bottom"))
         )
 
       })
 
 
-<<<<<<< HEAD
-      output$dirout <- renderText(dir())
 
-      previewDM <- reactive({
-        browser()
-        dm <- datamanR()
-        dm <- dm$setManName(input$name)
-        dm <- dm$setManPath(dir())
-        dm <- dm$setPermission(input$perm)
-        dm
-      })
-
-
-      output$preview <- renderPrint(previewDM())
-=======
       output$dirout <- renderText(str_c(p(strong(dir()), style = "word-wrap: break-word;")))
-      output$saveOut <- renderPrint(input$save)
 
       previewDM <- reactive({
         cat("DMRStructure:\n",
@@ -220,7 +189,6 @@ modDataManServer <- function(id, roots = c(home = getwd()), datamanR) {
                   mod_name = reactive(input$name),
                   mod_path = dir,
                   update_dimg = reactive(input$update_disk)))
->>>>>>> 8883174fffe59fc7385921cf4383eda41b6101c6
     }
   )
 }
