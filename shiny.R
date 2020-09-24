@@ -1,5 +1,6 @@
 library(shiny)
 library(datamanR)
+library(glue)
 library(shinyFiles)
 library(shinydashboard)
 library(data.table)
@@ -57,10 +58,10 @@ ui <- dashboardPage(
   dashboardBody(
     tags$head(
       tags$style(""
-        # HTML('
-        #
-        #      '
-        # )
+                 # HTML('
+                 #
+                 #      '
+                 # )
       )
     ),
     tabItems(
@@ -94,7 +95,9 @@ ui <- dashboardPage(
       br(),
       box(title = "Current Data ManageR", solidHeader = TRUE,
           status = "primary", collapsible = TRUE,
-          verbatimTextOutput("manageR"))
+          verbatimTextOutput("manageR")),
+      box(title = "Tables:", solidHeader = TRUE, status = "primary", collapsible = TRUE,
+          verbatimTextOutput("TInfos"))
     )
   )
 )
@@ -107,18 +110,21 @@ server <- function(input, output, session) {
 
   rv <- reactiveValues(
     ManR = DataManR$new())
+  depend <- reactiveVal(0, "Value to update displays")
 
   create <- createDataManRServer("newDataManR", roots = c(home = "/home/datamanr"))
 
   observeEvent(create$set(), {
     req(create$data())
     rv$ManR <- create$data()
+    update_disp()
   })
 
   load <- loadDataManRServer("loadDataManR", roots = c(home = "/home/datamanr"))
   observeEvent(load$set(), {
     req(load$data())
     rv$ManR <- load$data()
+    update_disp()
   })
 
   #csvfile <- csvFileServer("csv", FALSE)
@@ -137,18 +143,45 @@ server <- function(input, output, session) {
     rv$ManR$name <- mod$mod_name()
     rv$ManR$path <- mod$mod_path()
     rv$ManR$save()
+    update_disp()
   })
 
+  observeEvent(addTInfo$set(), {
+    validate(
+      need(rv$ManR$isValid(), "Current DataManR is not Valid. Please ensure it is Named and has a valid path")
+    )
+    isolate({
+      data2 <- addTInfo$data()
+      name2 <- addTInfo$name()
+      path2 <- addTInfo$path()
+      keys2 <- addTInfo$keys()
+    })
+    validate(
+      need(!name2%in%names(rv$ManR$Tables), glue("There already exists a table named {name2} in {rv$ManR$name}"))
+    )
+    rv$ManR$addTable(def = TInfo$new(data = data2,
+                                     name = name2,
+                                     path = path2,
+                                     keys = keys2))
+    update_disp()
+  })
+
+  update_disp <- reactive(depend(depend()+1))
   output$manageR <- renderPrint({
-    mod$save()
+    depend()
     rv$ManR
   })
 
-  addDefServer("add_table")
+  output$TInfos <- renderPrint({
+    depend()
+    if(length(rv$ManR$Tables)==0){
+      print("No Tables to show")
+    } else {
+      print(rv$ManR$Tables)
+    }
+  })
 
-
-
-
+  addTInfo <- addDefServer("add_table", roots = c(home = "/home/datamanr"))
 
   mod <- modDataManServer("modDataManR", roots = c(home = getwd()), datamanR = reactive(rv$ManR))
 
