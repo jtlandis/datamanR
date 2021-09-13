@@ -7,12 +7,15 @@ selectMappingUI <- function(id){
       }
     "))
   )
-  ui <- uiOutput(ns('mapping'))
-  add_button <- actionButton(ns('add'), icon = icon('add', 'primary'), label = NULL)
-  do.call('tagList', c(list(style_head),
-                       list(useShinyjs()),
-                       list(ui),
-                       list(add_button)))
+  div(
+    style = "padding:10px;width:100%;min-width:200px;position:relative",
+    id = ns("selectMappingContainer"),
+    style_head,
+    useShinyjs(),
+    div(style = "width:100%",
+        id = ns('add-button-container'),
+        actionButton(ns('add'), icon = icon('plus'), label = NULL, class = 'btn-primary', style = "width:9%;position:relative;left:41%;"))
+  )
 }
 
 selectMappingServer <- function(id, choices_left = NULL, choices_right = NULL,
@@ -79,7 +82,7 @@ selectMappingServer <- function(id, choices_left = NULL, choices_right = NULL,
                                  choices_right = choices_right()
                                ), SIMPLIFY = F)
         for(ui in pair_list_ui) {
-          insertUI(selector = glue("#{ns('add')}"),
+          insertUI(selector = glue("#{ns('add-button-container')}"),
                    where = 'beforeBegin',
                    ui = ui)
         }
@@ -98,7 +101,7 @@ selectMappingServer <- function(id, choices_left = NULL, choices_right = NULL,
                                               choices_right = choices_right(),
                                               selected_left = choices_left()[1],
                                               selected_right = choices_right()[1])
-                     insertUI(selector = glue("#{ns('add')}"),
+                     insertUI(selector = glue("#{ns('add-button-container')}"),
                               where = 'beforeBegin',
                               ui = ui, immediate = T)
                      #isolate(.mods <- mods())
