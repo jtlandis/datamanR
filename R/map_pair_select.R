@@ -11,6 +11,7 @@ map_pair_select_UI <- function(id, choices_left = NULL, choices_right = NULL,
   s2[[2]]$class <- NULL
   i <- icon('arrows-alt-h', style = "display:inline-block;width:10%;text-align:center;horizontal-align:center;")
   b <- circleButton(ns('rm'), NULL, icon = icon('times', style = "text-align:center"), class = "btn-danger",size = 'sm', style = "display:inline-block;horizontal-align:center;position:absolute;left:91%")
+
   div(s1,i, s2, b, id =ns("pair_select_container"), style = "padding:10px;width:100%;min-width:200px;position:relative")
 }
 
@@ -20,21 +21,10 @@ map_pair_select_Server <- function(id) {
     function(input, output, session) {
       ns <- session$ns
 
-      depend <- reactiveVal(0L)
-      observeEvent(NULL, {
-        depend(depend() + 1L)
-      }, ignoreNULL = T, once = T, autoDestroy = T)
-
-      left_value <- reactive({
-        depend()
-        input$left})
-      right_value <- reactive({
-        depend()
-        input$right})
+      left_value <- reactive({input$left})
+      right_value <- reactive({input$right})
 
       observeEvent(input$rm, {
-        browser()
-        #zap_mapping_index(id, where = .rm_indx_ns(ns("")))
         remove_shiny_inputs(c(ns("left"),ns("right")), .input = input)
         removeUI(glue("#{ns('pair_select_container')}"))
       }, priority = 4L, once = TRUE, ignoreInit = T)
