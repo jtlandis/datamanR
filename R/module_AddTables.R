@@ -635,7 +635,7 @@ definetablServer <- function(id, roots){
             selector = str_c("#", ele_id)
           )
           removed(c(removed(), id_add))
-          remove_shiny_inputs(id = id_add, .input = input)
+          remove_shiny_inputs(id = ns(paste0(id_add,c(".remove",".add_up",".add_bot"))), .input = input)
         })
 
         observeEvent(input[[str_c(id_add,".add_up")]],{
@@ -692,10 +692,3 @@ definetablServer <- function(id, roots){
 }
 
 
-remove_shiny_inputs <- function(id, .input) {
-  invisible(
-    lapply(grep(id, names(.input), value = TRUE), function(i) {
-      .subset2(.input, "impl")$.values$remove(i)
-    })
-  )
-}
