@@ -123,12 +123,28 @@ modDataManRUI <- function(id){
   ns <- NS(id)
 
   tagList(
-    uiOutput(ns("ui")),
+    fluidRow(
+      column(width = 6,
+             textInput(ns("name"), label = "Name", NULL),
+             selectInput(ns("perm"), "Permission Level", choices = c("public","private"), selected = "public")),
+      column(width = 6,
+             br(),
+             shinyDirButton(ns("directory"), "New Directory", "Select New Directory"),
+             htmlOutput(ns("dirout")),
+             br(),
+             actionButton(ns("save"), "Save"),
+             radioButtons(ns("update_disk"), "Delete Old File?", choices = c("Yes","No"), selected = "Yes", inline = T),
+             bsTooltip(ns("update_disk"),
+                       title = str_c("Modifying the name or directory of the current DataManageR ",
+                                     "will affect how it is saved. Select \"Yes\" to ensure the ",
+                                     "old version is deleted. Selecting \"No\" will preserve the ",
+                                     "old version on the file system essentially making a copy.",
+                                     " It is generally recommened ",
+                                     "to keep this toggled as \"Yes\" to prevent redundant files."),placement = "bottom"))
+    ),
     hr(),
     h3("Preview"),
-    verbatimTextOutput(ns("preview")),
-    actionButton(ns("save"), "Save")
-
+    verbatimTextOutput(ns("preview"))
   )
 }
 
@@ -147,32 +163,13 @@ modDataManServer <- function(id, roots = c(home = getwd()), datamanR) {
                parseDirPath(roots = roots, selection = input$directory))
       })
 
+      observe(
+        updateTextInput(inputId = 'name', value = datamanR()$name)
+      )
 
-      output$ui<- renderUI({
-        ns <- session$ns
-        fluidRow(
-          column(width = 6,
-                 textInput(ns("name"), label = "Name", value = datamanR()$name),
-                 selectInput(ns("perm"), "Permission Level", choices = c("public","private"), selected = datamanR()$access)),
-          column(width = 6,
-                 br(),
-                 shinyDirButton(ns("directory"), "New Directory", "Select New Directory"),
-                 htmlOutput(ns("dirout")),
-                 br(),
-                 actionButton(ns("save"), "Save"),
-                 radioButtons(ns("update_disk"), "Delete Old File?", choices = c("Yes","No"), selected = "Yes", inline = T),
-                 bsTooltip(ns("update_disk"),
-                           title = str_c("Modifying the name or directory of the current DataManageR ",
-                                         "will affect how it is saved. Select \"Yes\" to ensure the ",
-                                         "old version is deleted. Selecting \"No\" will preserve the ",
-                                         "old version on the file system essentially making a copy.",
-                                         " It is generally recommened ",
-                                         "to keep this toggled as \"Yes\" to prevent redundant files."),placement = "bottom"))
-        )
-
-      })
-
-
+      observe(
+        updateSelectInput(inputId = 'perm', selected = datamanR()$access, choices = c("public","private"))
+      )
 
       output$dirout <- renderText(str_c(p(strong(dir()), style = "word-wrap: break-word;")))
 
