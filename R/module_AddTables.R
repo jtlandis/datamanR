@@ -657,12 +657,13 @@ definetablServer <- function(id, roots){
       meta <- reactive({
         matches <- grep("indx_[0-9]+", names(input), value = TRUE)
         req(length(matches)>0)
+        #browser()
         matches <- matches[!matches %match% removed() &
                              matches %match% c("colname","coltype","keys")]
         if(length(matches)==0) return(data.table(x = character()))
         meta_ <- data.table(x = matches)[, `:=`(id = str_extract(x,"indx_[0-9]+"),
                                                 key = str_remove(x,"indx_[0-9]+\\."))] %>%
-          dcast(formula = ... ~ key, value.var = "x")
+          dcast(formula = id ~ key, value.var = "x")
         meta_ <- meta_[,`:=`(colname = unlist(lapply(colname, function(i) input[[i]])),
                              coltype = unlist(lapply(coltype, function(i) input[[i]])),
                              keys = unlist(lapply(keys, function(i) input[[i]])))]
